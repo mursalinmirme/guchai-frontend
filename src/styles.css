@@ -1,0 +1,213 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Central design system. Change palette variables in :root (or a data-theme
+ * block below) to reskin the entire application.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --color-text-main: var(--text-main);
+  --color-text-dim: var(--text-dim);
+
+  --color-primary: var(--brand);
+  --color-primary-foreground: var(--brand-foreground);
+  --color-secondary: var(--surface);
+  --color-secondary-foreground: var(--text-main);
+  --color-muted: var(--surface);
+  --color-muted-foreground: var(--text-dim);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--text-main);
+  --color-popover: var(--surface-elevated);
+  --color-popover-foreground: var(--text-main);
+  --color-destructive: var(--danger);
+  --color-destructive-foreground: var(--brand-foreground);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --shadow-glow: 0 0 40px -8px color-mix(in oklab, var(--brand) 55%, transparent);
+}
+
+/* ============================================================
+ * PALETTES — Themeable in one place.
+ * The default palette is "midnight". To swap, set
+ *   <html data-theme="ember"> in the ThemeProvider.
+ * ============================================================ */
+
+:root,
+[data-theme="midnight"] {
+  --radius: 0.9rem;
+  --bg-primary: #020617;
+  --bg-secondary: #0f172a;
+  --surface: #1e293b;
+  --surface-elevated: #172033;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: #38bdf8;
+  --brand: #38bdf8;
+  --brand-foreground: #020617;
+  --accent: #818cf8;
+  --accent-foreground: #020617;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --text-main: #f8fafc;
+  --text-dim: #94a3b8;
+  --background: var(--bg-primary);
+  --foreground: var(--text-main);
+}
+
+[data-theme="ember"] {
+  --bg-primary: #0c0a09;
+  --bg-secondary: #1c1917;
+  --surface: #292524;
+  --surface-elevated: #211d1c;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: #f97316;
+  --brand: #f97316;
+  --brand-foreground: #0c0a09;
+  --accent: #fbbf24;
+  --accent-foreground: #0c0a09;
+  --success: #84cc16;
+  --warning: #eab308;
+  --danger: #dc2626;
+  --text-main: #fafaf9;
+  --text-dim: #a8a29e;
+  --background: var(--bg-primary);
+  --foreground: var(--text-main);
+}
+
+[data-theme="forest"] {
+  --bg-primary: #05100b;
+  --bg-secondary: #0b1f16;
+  --surface: #113023;
+  --surface-elevated: #0e2a1e;
+  --border: rgba(255, 255, 255, 0.06);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: #34d399;
+  --brand: #34d399;
+  --brand-foreground: #05100b;
+  --accent: #a7f3d0;
+  --accent-foreground: #05100b;
+  --success: #22c55e;
+  --warning: #fbbf24;
+  --danger: #f43f5e;
+  --text-main: #ecfdf5;
+  --text-dim: #6ee7b7;
+  --background: var(--bg-primary);
+  --foreground: var(--text-main);
+}
+
+[data-theme="violet"] {
+  --bg-primary: #0a0714;
+  --bg-secondary: #150f28;
+  --surface: #241a3d;
+  --surface-elevated: #1c1533;
+  --border: rgba(255, 255, 255, 0.07);
+  --input: rgba(255, 255, 255, 0.09);
+  --ring: #a78bfa;
+  --brand: #a78bfa;
+  --brand-foreground: #0a0714;
+  --accent: #f0abfc;
+  --accent-foreground: #0a0714;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #fb7185;
+  --text-main: #faf5ff;
+  --text-dim: #c4b5fd;
+  --background: var(--bg-primary);
+  --foreground: var(--text-main);
+}
+
+[data-theme="paper"] {
+  --bg-primary: #f5f3ee;
+  --bg-secondary: #ffffff;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --border: rgba(15, 23, 42, 0.08);
+  --input: rgba(15, 23, 42, 0.1);
+  --ring: #0f172a;
+  --brand: #0f172a;
+  --brand-foreground: #f5f3ee;
+  --accent: #64748b;
+  --accent-foreground: #f5f3ee;
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --text-main: #0f172a;
+  --text-dim: #64748b;
+  --background: var(--bg-primary);
+  --foreground: var(--text-main);
+}
+
+/* ============================================================
+ * Reusable design classes
+ * ============================================================ */
+
+@utility glass-card {
+  background: color-mix(in oklab, var(--surface) 55%, transparent);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+}
+
+@utility timer-glow {
+  text-shadow: 0 0 15px color-mix(in oklab, var(--brand) 45%, transparent);
+}
+
+@utility timer-glow-danger {
+  text-shadow: 0 0 15px color-mix(in oklab, var(--danger) 55%, transparent);
+}
+
+@utility overtime-pulse {
+  animation: pulse-danger 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-danger {
+  0%, 100% { border-color: color-mix(in oklab, var(--danger) 25%, transparent); box-shadow: 0 0 0 0 color-mix(in oklab, var(--danger) 20%, transparent); }
+  50% { border-color: color-mix(in oklab, var(--danger) 80%, transparent); box-shadow: 0 0 24px 0 color-mix(in oklab, var(--danger) 25%, transparent); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@utility animate-fade-up {
+  animation: fade-in-up 0.4s ease-out both;
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html, body { background-color: var(--color-bg-primary); color: var(--color-text-main); }
+  body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+}
