@@ -5,10 +5,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { format } from "date-fns";
 import { useCreateTask, tomorrowStr, type Priority } from "@/hooks/use-tasks";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { Plus, Loader2 } from "lucide-react";
 
@@ -36,6 +43,7 @@ export function AddTaskDialog({
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("10:00");
   const create = useCreateTask();
+  const isMobile = useIsMobile();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,117 +77,137 @@ export function AddTaskDialog({
     }
   };
 
+  const formContent = (
+    <form onSubmit={submit} className="space-y-4 px-4 pb-4 sm:px-0 sm:pb-0">
+      <label className="block">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+          Title
+        </span>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+          autoFocus={!isMobile}
+          placeholder="Refactor auth flow"
+          className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm outline-none focus:border-brand"
+        />
+      </label>
+      <label className="block">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+          Details
+        </span>
+        <textarea
+          value={details}
+          onChange={(e) => setDetails(e.target.value)}
+          rows={2}
+          placeholder="Optional notes, sub-steps, links…"
+          className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm outline-none focus:border-brand resize-none"
+        />
+      </label>
+      <label className="block">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+          Date
+        </span>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm outline-none focus:border-brand font-mono"
+        />
+      </label>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="block">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+            Start
+          </span>
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            required
+            className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm font-mono outline-none focus:border-brand"
+          />
+        </label>
+        <label className="block">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+            End
+          </span>
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            required
+            className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm font-mono outline-none focus:border-brand"
+          />
+        </label>
+      </div>
+      <div>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+          Priority
+        </span>
+        <div className="mt-1 grid grid-cols-4 gap-1.5">
+          {PRIORITIES.map((p) => (
+            <button
+              type="button"
+              key={p.id}
+              onClick={() => setPriority(p.id)}
+              className={`py-2 text-xs font-semibold rounded-lg border transition ${
+                priority === p.id
+                  ? "bg-brand text-brand-foreground border-brand"
+                  : "bg-bg-primary/60 border-border text-text-dim hover:text-text-main"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="pt-2">
+        <button
+          type="submit"
+          disabled={create.isPending}
+          className="w-full rounded-full bg-brand text-brand-foreground py-2.5 font-bold text-sm flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-60"
+        >
+          {create.isPending && <Loader2 className="size-4 animate-spin" />}
+          Commit to Schedule
+        </button>
+      </div>
+    </form>
+  );
+
+  const TriggerButton = (
+    <button
+      className={
+        triggerClassName ??
+        "inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand text-brand-foreground font-bold text-sm hover:brightness-110 transition"
+      }
+    >
+      <Plus className="size-4" /> {triggerLabel}
+    </button>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerTrigger asChild>{TriggerButton}</DrawerTrigger>
+        <DrawerContent className="bg-surface-elevated border-border text-text-main">
+          <DrawerHeader className="text-left">
+            <DrawerTitle>Plan a task</DrawerTitle>
+          </DrawerHeader>
+          {formContent}
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button
-          className={
-            triggerClassName ??
-            "inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand text-brand-foreground font-bold text-sm hover:brightness-110 transition"
-          }
-        >
-          <Plus className="size-4" /> {triggerLabel}
-        </button>
-      </DialogTrigger>
+      <DialogTrigger asChild>{TriggerButton}</DialogTrigger>
       <DialogContent className="bg-surface-elevated border-border text-text-main sm:max-w-md max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Plan a task</DialogTitle>
         </DialogHeader>
-        <form onSubmit={submit} className="space-y-4">
-          <label className="block">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
-              Title
-            </span>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              autoFocus
-              placeholder="Refactor auth flow"
-              className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm outline-none focus:border-brand"
-            />
-          </label>
-          <label className="block">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
-              Details
-            </span>
-            <textarea
-              value={details}
-              onChange={(e) => setDetails(e.target.value)}
-              rows={2}
-              placeholder="Optional notes, sub-steps, links…"
-              className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm outline-none focus:border-brand resize-none"
-            />
-          </label>
-          <label className="block">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
-              Date
-            </span>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm outline-none focus:border-brand font-mono"
-            />
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
-                Start
-              </span>
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                required
-                className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm font-mono outline-none focus:border-brand"
-              />
-            </label>
-            <label className="block">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
-                End
-              </span>
-              <input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                required
-                className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm font-mono outline-none focus:border-brand"
-              />
-            </label>
-          </div>
-          <div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
-              Priority
-            </span>
-            <div className="mt-1 grid grid-cols-4 gap-1.5">
-              {PRIORITIES.map((p) => (
-                <button
-                  type="button"
-                  key={p.id}
-                  onClick={() => setPriority(p.id)}
-                  className={`py-2 text-xs font-semibold rounded-lg border transition ${
-                    priority === p.id
-                      ? "bg-brand text-brand-foreground border-brand"
-                      : "bg-bg-primary/60 border-border text-text-dim hover:text-text-main"
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <DialogFooter>
-            <button
-              type="submit"
-              disabled={create.isPending}
-              className="w-full rounded-full bg-brand text-brand-foreground py-2.5 font-bold text-sm flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-60"
-            >
-              {create.isPending && <Loader2 className="size-4 animate-spin" />}
-              Commit to Schedule
-            </button>
-          </DialogFooter>
-        </form>
+        {formContent}
       </DialogContent>
     </Dialog>
   );

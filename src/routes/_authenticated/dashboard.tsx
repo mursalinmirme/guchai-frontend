@@ -77,7 +77,7 @@ function Dashboard() {
           </div>
           {/* Tablet trigger — compact */}
           <div className="lg:hidden">
-            <AddTaskDialog defaultDate={date} triggerLabel="+ Add" />
+            <AddTaskDialog defaultDate={date} triggerLabel="Add" />
           </div>
         </div>
       </header>

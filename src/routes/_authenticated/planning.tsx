@@ -29,7 +29,7 @@ function Planning() {
           <p className="text-base sm:text-xl font-bold tracking-tight">Design your day</p>
         </div>
         <div className="shrink-0">
-          <AddTaskDialog defaultDate={date} triggerLabel="+ Add task" />
+          <AddTaskDialog defaultDate={date} triggerLabel="Add task" />
         </div>
       </header>
 
