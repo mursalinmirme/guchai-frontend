@@ -1,6 +1,7 @@
-import { useEffect, useRef, KeyboardEvent } from "react";
+import { useEffect, useRef, KeyboardEvent, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  BrainCircuit,
   CheckCircle,
   ChevronDown,
   CircleDot,
@@ -11,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { RobotFace } from "./robot-face";
+import { RobotMemoryManager } from "./robot-memory-manager";
 import type { ConversationMessage, RobotState } from "@/hooks/use-robot";
 import type { ToolExecution } from "@/api/robot.api";
 
@@ -173,6 +175,7 @@ export function RobotInterface({
 }: RobotInterfaceProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [showMemory, setShowMemory] = useState(false);
   const isBusy = robotState === "THINKING" || robotState === "PROCESSING" || robotState === "RESPONDING";
   const isEmpty = conversation.length === 0;
 
@@ -263,6 +266,13 @@ export function RobotInterface({
               </div>
 
               <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setShowMemory(!showMemory)}
+                  className={`p-1.5 rounded-lg transition-colors ${showMemory ? "bg-brand/10 text-brand" : "hover:bg-white/5 text-text-dim hover:text-text-main"}`}
+                  title="Robot Memory"
+                >
+                  <BrainCircuit className="size-4" />
+                </button>
                 {conversation.length > 0 && (
                   <button
                     onClick={clearConversation}
@@ -282,81 +292,92 @@ export function RobotInterface({
               </div>
             </div>
 
-            {/* ── CONVERSATION AREA ── */}
-            <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4">
-              {/* Empty state */}
-              {isEmpty && (
-                <div className="flex flex-col items-center justify-center h-full gap-4 pb-8">
-                  <RobotFace state={robotState} size="lg" />
-                  <div className="text-center">
-                    <p className="text-sm font-medium text-text-main">How can I help?</p>
-                    <p className="text-xs text-text-dim mt-1">
-                      Ask me to create, manage, or analyze your tasks.
-                    </p>
-                  </div>
+            {/* ── CONDITIONAL VIEW ── */}
+            {showMemory ? (
+              <div className="flex-1 overflow-hidden">
+                <RobotMemoryManager onClose={() => setShowMemory(false)} />
+              </div>
+            ) : (
+              <>
+                {/* ── CONVERSATION AREA ── */}
+                <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4">
+                  {/* Empty state */}
+                  {isEmpty && (
+                    <div className="flex flex-col items-center justify-center h-full gap-4 pb-8">
+                      <RobotFace state={robotState} size="lg" />
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-text-main">How can I help?</p>
+                        <p className="text-xs text-text-dim mt-1">
+                          Ask me to create, manage, or analyze your tasks.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Messages */}
+                  {conversation.map((msg) => (
+                    <MessageBubble key={msg.id} msg={msg} />
+                  ))}
+                  <div ref={messagesEndRef} />
                 </div>
-              )}
 
-              {/* Messages */}
-              {conversation.map((msg) => (
-                <MessageBubble key={msg.id} msg={msg} />
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
+                {/* ── SUGGESTIONS (shown when empty or right after open) ── */}
+                {isEmpty && (
+                  <SuggestionChips onSelect={handleSuggestion} />
+                )}
 
-            {/* ── SUGGESTIONS (shown when empty or right after open) ── */}
-            {isEmpty && (
-              <SuggestionChips onSelect={handleSuggestion} />
+                {/* ── INPUT AREA ── */}
+                <div
+                  className="px-3 py-3 shrink-0"
+                  style={{ borderTop: "1px solid var(--border)" }}
+                >
+                  <div
+                    className="flex items-end gap-2 rounded-xl px-3 py-2"
+                    style={{
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                    }}
+                  >
+                    <textarea
+                      ref={inputRef}
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Ask anything about your tasks…"
+                      rows={1}
+                      disabled={isBusy}
+                      className="flex-1 bg-transparent text-sm text-text-main placeholder:text-text-dim resize-none outline-none min-h-[24px] max-h-[120px] leading-relaxed disabled:opacity-50"
+                      style={{ scrollbarWidth: "none" }}
+                      onInput={(e) => {
+                        const t = e.currentTarget;
+                        t.style.height = "auto";
+                        t.style.height = `${Math.min(t.scrollHeight, 120)}px`;
+                      }}
+                    />
+                    <button
+                      onClick={() => sendMessage(inputValue)}
+                      disabled={isBusy || !inputValue.trim()}
+                      className="shrink-0 p-1.5 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        background: isBusy ? "var(--surface)" : "var(--brand)",
+                        color: isBusy ? "var(--text-dim)" : "var(--brand-foreground)",
+                      }}
+                    >
+                      {isBusy ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Send className="size-4" />
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-text-dim text-center mt-1.5 opacity-50">
+                    Enter to send · Shift+Enter for new line
+                  </p>
+                </div>
+              </>
             )}
 
-            {/* ── INPUT AREA ── */}
-            <div
-              className="px-3 py-3 shrink-0"
-              style={{ borderTop: "1px solid var(--border)" }}
-            >
-              <div
-                className="flex items-end gap-2 rounded-xl px-3 py-2"
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                }}
-              >
-                <textarea
-                  ref={inputRef}
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Ask anything about your tasks…"
-                  rows={1}
-                  disabled={isBusy}
-                  className="flex-1 bg-transparent text-sm text-text-main placeholder:text-text-dim resize-none outline-none min-h-[24px] max-h-[120px] leading-relaxed disabled:opacity-50"
-                  style={{ scrollbarWidth: "none" }}
-                  onInput={(e) => {
-                    const t = e.currentTarget;
-                    t.style.height = "auto";
-                    t.style.height = `${Math.min(t.scrollHeight, 120)}px`;
-                  }}
-                />
-                <button
-                  onClick={() => sendMessage(inputValue)}
-                  disabled={isBusy || !inputValue.trim()}
-                  className="shrink-0 p-1.5 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{
-                    background: isBusy ? "var(--surface)" : "var(--brand)",
-                    color: isBusy ? "var(--text-dim)" : "var(--brand-foreground)",
-                  }}
-                >
-                  {isBusy ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <Send className="size-4" />
-                  )}
-                </button>
-              </div>
-              <p className="text-[10px] text-text-dim text-center mt-1.5 opacity-50">
-                Enter to send · Shift+Enter for new line
-              </p>
-            </div>
+
 
             {/* Mobile drag indicator */}
             <div className="lg:hidden absolute top-2 left-1/2 -translate-x-1/2">
