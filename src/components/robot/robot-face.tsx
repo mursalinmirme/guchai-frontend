@@ -17,8 +17,10 @@ function getEyeConfig(state: RobotState) {
     case "ERROR":
       return { shape: "sad" }; // downturned
     case "LISTENING":
+    case "PROACTIVE":
       return { shape: "wide" }; // wide open
     case "RESPONDING":
+    case "SPEAKING":
       return { shape: "normal" };
     default:
       return { shape: "normal" };
@@ -33,9 +35,11 @@ function getStatusColor(state: RobotState): string {
       return "var(--danger)";
     case "THINKING":
     case "PROCESSING":
+    case "PROACTIVE":
       return "var(--warning)";
     case "LISTENING":
     case "RESPONDING":
+    case "SPEAKING":
       return "var(--brand)";
     default:
       return "var(--brand)";
@@ -165,6 +169,23 @@ function Mouth({ state }: { state: RobotState }) {
         animate={{ scaleX: [1, 0.6, 1.2, 0.8, 1] }}
         transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
       />
+    );
+  }
+  if (state === "SPEAKING") {
+    return (
+      <motion.div
+        className="flex gap-0.5 items-center"
+        style={{ height: 8 }}
+      >
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            style={{ width: 3, borderRadius: 2, background: color }}
+            animate={{ height: [3, Math.random() * 6 + 4, 3] }}
+            transition={{ duration: 0.3, repeat: Infinity, delay: i * 0.1, ease: "easeInOut" }}
+          />
+        ))}
+      </motion.div>
     );
   }
   // Default neutral line

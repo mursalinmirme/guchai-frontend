@@ -6,13 +6,18 @@ import {
   ChevronDown,
   CircleDot,
   Loader2,
+  Mic,
   Send,
   Sparkles,
   Trash2,
+  Volume2,
+  VolumeX,
   X,
+  Bell
 } from "lucide-react";
 import { RobotFace } from "./robot-face";
 import { RobotMemoryManager } from "./robot-memory-manager";
+import { RobotNotifications } from "./robot-notifications";
 import type { ConversationMessage, RobotState } from "@/hooks/use-robot";
 import type { ToolExecution } from "@/api/robot.api";
 
@@ -160,6 +165,16 @@ interface RobotInterfaceProps {
   setInputValue: (v: string) => void;
   sendMessage: (text: string) => void;
   clearConversation: () => void;
+  // Voice integration
+  isVoiceInSupported: boolean;
+  isVoiceOutSupported: boolean;
+  isListening: boolean;
+  isSpeaking: boolean;
+  voiceEnabled: boolean;
+  toggleVoice: () => void;
+  startListening: () => void;
+  stopListening: () => void;
+  stopSpeaking: () => void;
 }
 
 export function RobotInterface({
@@ -172,10 +187,20 @@ export function RobotInterface({
   setInputValue,
   sendMessage,
   clearConversation,
+  isVoiceInSupported,
+  isVoiceOutSupported,
+  isListening,
+  isSpeaking,
+  voiceEnabled,
+  toggleVoice,
+  startListening,
+  stopListening,
+  stopSpeaking,
 }: RobotInterfaceProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [showMemory, setShowMemory] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const isBusy = robotState === "THINKING" || robotState === "PROCESSING" || robotState === "RESPONDING";
   const isEmpty = conversation.length === 0;
 
@@ -266,8 +291,39 @@ export function RobotInterface({
               </div>
 
               <div className="flex items-center gap-1">
+                {isVoiceOutSupported && (
+                  <button
+                    onClick={isSpeaking ? stopSpeaking : toggleVoice}
+                    className={`p-1.5 rounded-lg transition-colors ${
+                      isSpeaking
+                        ? "bg-brand text-white animate-pulse"
+                        : voiceEnabled
+                        ? "text-brand hover:bg-brand/10"
+                        : "hover:bg-white/5 text-text-dim hover:text-text-main"
+                    }`}
+                    title={isSpeaking ? "Stop speaking" : voiceEnabled ? "Voice output enabled" : "Voice output disabled"}
+                  >
+                    {voiceEnabled ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
+                  </button>
+                )}
+                
                 <button
-                  onClick={() => setShowMemory(!showMemory)}
+                  onClick={() => {
+                    setShowNotifications(!showNotifications);
+                    setShowMemory(false);
+                  }}
+                  className={`relative p-1.5 rounded-lg transition-colors ${showNotifications ? "bg-brand/10 text-brand" : "hover:bg-white/5 text-text-dim hover:text-text-main"}`}
+                  title="Notifications & Settings"
+                >
+                  <Bell className="size-4" />
+                  {/* Badge added by notification component later if needed, or we can fetch count here */}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowMemory(!showMemory);
+                    setShowNotifications(false);
+                  }}
                   className={`p-1.5 rounded-lg transition-colors ${showMemory ? "bg-brand/10 text-brand" : "hover:bg-white/5 text-text-dim hover:text-text-main"}`}
                   title="Robot Memory"
                 >
@@ -296,6 +352,10 @@ export function RobotInterface({
             {showMemory ? (
               <div className="flex-1 overflow-hidden">
                 <RobotMemoryManager onClose={() => setShowMemory(false)} />
+              </div>
+            ) : showNotifications ? (
+              <div className="flex-1 overflow-hidden">
+                <RobotNotifications onClose={() => setShowNotifications(false)} />
               </div>
             ) : (
               <>
@@ -343,9 +403,9 @@ export function RobotInterface({
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder="Ask anything about your tasks…"
+                      placeholder={isListening ? "Listening..." : "Ask anything about your tasks…"}
                       rows={1}
-                      disabled={isBusy}
+                      disabled={isBusy || isListening}
                       className="flex-1 bg-transparent text-sm text-text-main placeholder:text-text-dim resize-none outline-none min-h-[24px] max-h-[120px] leading-relaxed disabled:opacity-50"
                       style={{ scrollbarWidth: "none" }}
                       onInput={(e) => {
@@ -354,21 +414,39 @@ export function RobotInterface({
                         t.style.height = `${Math.min(t.scrollHeight, 120)}px`;
                       }}
                     />
-                    <button
-                      onClick={() => sendMessage(inputValue)}
-                      disabled={isBusy || !inputValue.trim()}
-                      className="shrink-0 p-1.5 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                      style={{
-                        background: isBusy ? "var(--surface)" : "var(--brand)",
-                        color: isBusy ? "var(--text-dim)" : "var(--brand-foreground)",
-                      }}
-                    >
-                      {isBusy ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        <Send className="size-4" />
+                    
+                    <div className="flex items-center gap-1 shrink-0">
+                      {isVoiceInSupported && (
+                        <button
+                          onClick={isListening ? stopListening : startListening}
+                          disabled={isBusy}
+                          className={`p-1.5 rounded-lg transition-all ${
+                            isListening
+                              ? "bg-danger/10 text-danger animate-pulse"
+                              : "text-text-dim hover:text-text-main hover:bg-white/5 disabled:opacity-40"
+                          }`}
+                          title={isListening ? "Stop listening" : "Start voice input"}
+                        >
+                          <Mic className="size-4" />
+                        </button>
                       )}
-                    </button>
+
+                      <button
+                        onClick={() => sendMessage(inputValue)}
+                        disabled={isBusy || (!inputValue.trim() && !isListening)}
+                        className="p-1.5 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                        style={{
+                          background: isBusy ? "var(--surface)" : "var(--brand)",
+                          color: isBusy ? "var(--text-dim)" : "var(--brand-foreground)",
+                        }}
+                      >
+                        {isBusy ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <Send className="size-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                   <p className="text-[10px] text-text-dim text-center mt-1.5 opacity-50">
                     Enter to send · Shift+Enter for new line

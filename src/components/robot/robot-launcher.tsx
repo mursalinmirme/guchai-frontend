@@ -3,14 +3,27 @@ import { X } from "lucide-react";
 import { RobotFace } from "./robot-face";
 import { RobotInterface } from "./robot-interface";
 import { useRobot } from "@/hooks/use-robot";
+import { useQuery } from "@tanstack/react-query";
+import { robotApi } from "@/api/robot.api";
 
 // ─────────────────────────────────────────────────────────────
 // Notification badge (unread / active state indicator)
 // ─────────────────────────────────────────────────────────────
 
-function ActiveDot() {
+function ActiveDot({ count }: { count?: number }) {
+  if (count && count > 0) {
+    return (
+      <div className="absolute -top-1.5 -right-1.5 z-10">
+        <span className="relative flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold text-white shadow-sm ring-2 ring-bg-secondary"
+              style={{ background: "var(--brand)" }}>
+          {count > 9 ? '9+' : count}
+        </span>
+      </div>
+    );
+  }
+
   return (
-    <div className="absolute -top-0.5 -right-0.5">
+    <div className="absolute -top-0.5 -right-0.5 z-10">
       <span className="relative flex h-2.5 w-2.5">
         <span
           className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60"
@@ -41,7 +54,25 @@ export function RobotLauncher() {
     setInputValue,
     sendMessage,
     clearConversation,
+    // Voice hooks from useRobot
+    isVoiceInSupported,
+    isVoiceOutSupported,
+    isListening,
+    isSpeaking,
+    voiceEnabled,
+    toggleVoice,
+    startListening,
+    stopListening,
+    stopSpeaking,
   } = useRobot();
+
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["robot_notifications"],
+    queryFn: robotApi.getNotifications,
+    refetchInterval: 30000,
+  });
+
+  const unreadCount = notifications.filter(n => !n.read_at).length;
 
   const isBusy =
     robotState === "THINKING" ||
@@ -63,6 +94,15 @@ export function RobotLauncher() {
         setInputValue={setInputValue}
         sendMessage={sendMessage}
         clearConversation={clearConversation}
+        isVoiceInSupported={isVoiceInSupported}
+        isVoiceOutSupported={isVoiceOutSupported}
+        isListening={isListening}
+        isSpeaking={isSpeaking}
+        voiceEnabled={voiceEnabled}
+        toggleVoice={toggleVoice}
+        startListening={startListening}
+        stopListening={stopListening}
+        stopSpeaking={stopSpeaking}
       />
 
       {/* Floating Action Button */}
@@ -115,8 +155,12 @@ export function RobotLauncher() {
             )}
           </AnimatePresence>
 
-          {/* Activity indicator */}
-          {!isOpen && (isBusy || hasConversation) && <ActiveDot />}
+          {/* Activity indicator / Notification Badge */}
+          {!isOpen && (unreadCount > 0 ? (
+            <ActiveDot count={unreadCount} />
+          ) : (isBusy || hasConversation) ? (
+            <ActiveDot />
+          ) : null)}
         </div>
       </motion.button>
     </>

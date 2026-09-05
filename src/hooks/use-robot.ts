@@ -1,6 +1,8 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { robotApi, ChatMessage, ToolExecution } from "@/api/robot.api";
+import { useVoiceInput } from "./use-voice-input";
+import { useVoiceOutput } from "./use-voice-output";
 
 // ─────────────────────────────────────────────────────────────
 // Robot State Machine
@@ -12,6 +14,8 @@ export type RobotState =
   | "THINKING"
   | "PROCESSING"
   | "RESPONDING"
+  | "SPEAKING"
+  | "PROACTIVE"
   | "SUCCESS"
   | "ERROR";
 
@@ -35,6 +39,61 @@ export function useRobot() {
   const [statusLabel, setStatusLabel] = useState<string>("");
   const [inputValue, setInputValue] = useState("");
   const queryClient = useQueryClient();
+
+  // Voice Hooks
+  const {
+    isSupported: isVoiceOutSupported,
+    isSpeaking,
+    voiceEnabled,
+    toggleVoice,
+    speak,
+    stopSpeaking,
+  } = useVoiceOutput();
+
+  const handleTranscript = useCallback((text: string) => {
+    setInputValue(text);
+    // Auto-send when voice is recognized
+    sendMessage(text);
+  }, []);
+
+  const handleVoiceError = useCallback((err: string) => {
+    setRobotState("ERROR");
+    setStatusLabel(err);
+    setTimeout(() => {
+      setRobotState("IDLE");
+      setStatusLabel("");
+    }, 3000);
+  }, []);
+
+  const {
+    isSupported: isVoiceInSupported,
+    isListening,
+    startListening,
+    stopListening,
+  } = useVoiceInput({
+    onTranscript: handleTranscript,
+    onError: handleVoiceError,
+  });
+
+  // Sync isListening -> LISTENING state
+  useEffect(() => {
+    if (isListening) {
+      setRobotState("LISTENING");
+      setStatusLabel("Listening...");
+    } else if (robotState === "LISTENING") {
+      setRobotState("IDLE");
+      setStatusLabel("");
+    }
+  }, [isListening, robotState]);
+
+  // Sync isSpeaking -> SPEAKING state
+  useEffect(() => {
+    if (isSpeaking && robotState === "SUCCESS") {
+      setRobotState("SPEAKING");
+    } else if (!isSpeaking && robotState === "SPEAKING") {
+      setRobotState("IDLE");
+    }
+  }, [isSpeaking, robotState]);
 
   const processingMsgIdRef = useRef<string | null>(null);
 
@@ -132,11 +191,16 @@ export function useRobot() {
           queryClient.invalidateQueries({ queryKey: ["tasks"] });
         }
 
-        // Briefly show success, then return to idle
+        // Speak response if voice is enabled
+        if (voiceEnabled && response.reply) {
+          speak(response.reply);
+        }
+
+        // Briefly show success, then return to idle (or speaking if voice is active)
         setRobotState("SUCCESS");
         setStatusLabel("Done!");
         setTimeout(() => {
-          setRobotState("IDLE");
+          setRobotState((prev) => (prev === "SUCCESS" ? "IDLE" : prev));
           setStatusLabel("");
         }, 1500);
       } catch (err: any) {
@@ -170,6 +234,16 @@ export function useRobot() {
     setConversation([]);
     setRobotState("IDLE");
     setStatusLabel("");
+    stopSpeaking();
+  }, [stopSpeaking]);
+
+  const setProactiveState = useCallback((message: string) => {
+    setRobotState("PROACTIVE");
+    setStatusLabel(message);
+    setTimeout(() => {
+      setRobotState("IDLE");
+      setStatusLabel("");
+    }, 4000);
   }, []);
 
   return {
@@ -183,5 +257,16 @@ export function useRobot() {
     setInputValue,
     sendMessage,
     clearConversation,
+    // Voice API
+    isVoiceInSupported,
+    isVoiceOutSupported,
+    isListening,
+    isSpeaking,
+    voiceEnabled,
+    toggleVoice,
+    startListening,
+    stopListening,
+    stopSpeaking,
+    setProactiveState,
   };
 }
