@@ -4,6 +4,7 @@ import { THEMES, useTheme } from "@/components/theme-provider";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { todayStr, useTodayDashboardStats } from "@/hooks/use-tasks";
 import { Logo } from "@/components/ui/logo";
+import { RobotLauncher } from "@/components/robot/robot-launcher";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   BarChart3,
@@ -195,6 +196,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="truncate">More</span>
         </button>
       </nav>
+
+      {/* ─── AI ROBOT LAUNCHER ─── */}
+      <RobotLauncher />
     </div>
   );
 }
