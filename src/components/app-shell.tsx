@@ -3,6 +3,7 @@ import { OvertimeMonitor } from "@/components/overtime-monitor";
 import { THEMES, useTheme } from "@/components/theme-provider";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { todayStr, useTodayDashboardStats } from "@/hooks/use-tasks";
+import { Logo } from "@/components/ui/logo";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   BarChart3,
@@ -39,9 +40,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <Link to="/dashboard" onClick={onNavClick} className="mb-10 flex items-center gap-3 shrink-0">
-        <div className="size-8 bg-brand rounded-lg grid place-items-center font-black text-brand-foreground">
-          G
-        </div>
+        <Logo className="size-8" />
         <span className="text-xl font-bold tracking-tight">Guchai</span>
       </Link>
 
@@ -134,9 +133,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between gap-3 px-4 h-14 border-b border-border bg-bg-primary/90 backdrop-blur-md">
         {/* Left: Logo */}
         <Link to="/dashboard" className="flex items-center gap-2">
-          <div className="size-7 bg-brand rounded-md grid place-items-center font-black text-brand-foreground text-sm">
-            G
-          </div>
+          <Logo className="size-7" />
           <span className="text-base font-bold tracking-tight">Guchai</span>
         </Link>
 

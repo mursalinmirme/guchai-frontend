@@ -2,6 +2,7 @@ import { authApi } from "@/api/auth.api";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader2, Zap } from "lucide-react";
 import { useState } from "react";
+import { Logo } from "@/components/ui/logo";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -44,9 +45,7 @@ function AuthPage() {
       <div className="hidden lg:flex flex-col justify-between p-12 bg-bg-secondary/60 border-r border-border relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,var(--brand)/12%,transparent_60%)] pointer-events-none" />
         <div className="relative flex items-center gap-3">
-          <div className="size-9 rounded-lg bg-brand grid place-items-center font-black text-brand-foreground">
-            G
-          </div>
+          <Logo className="size-9" />
           <span className="text-xl font-bold tracking-tight">Guchai</span>
         </div>
         <div className="relative space-y-6 max-w-md">
@@ -79,9 +78,7 @@ function AuthPage() {
       <div className="flex flex-col items-center justify-center p-4 sm:p-8 min-h-screen lg:min-h-0">
         {/* Mobile brand — only shown when left panel is hidden */}
         <div className="lg:hidden flex items-center gap-2 mb-8">
-          <div className="size-9 rounded-lg bg-brand grid place-items-center font-black text-brand-foreground">
-            G
-          </div>
+          <Logo className="size-9" />
           <span className="text-xl font-bold tracking-tight">Guchai</span>
         </div>
 
