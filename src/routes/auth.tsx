@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
 import { authApi } from "@/api/auth.api";
-import { toast } from "sonner";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader2, Zap } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -45,9 +45,9 @@ function AuthPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,var(--brand)/12%,transparent_60%)] pointer-events-none" />
         <div className="relative flex items-center gap-3">
           <div className="size-9 rounded-lg bg-brand grid place-items-center font-black text-brand-foreground">
-            T
+            G
           </div>
-          <span className="text-xl font-bold tracking-tight">TASKER</span>
+          <span className="text-xl font-bold tracking-tight">Guchai</span>
         </div>
         <div className="relative space-y-6 max-w-md">
           <h1 className="text-4xl font-bold tracking-tight leading-[1.05]">
@@ -80,9 +80,9 @@ function AuthPage() {
         {/* Mobile brand — only shown when left panel is hidden */}
         <div className="lg:hidden flex items-center gap-2 mb-8">
           <div className="size-9 rounded-lg bg-brand grid place-items-center font-black text-brand-foreground">
-            T
+            G
           </div>
-          <span className="text-xl font-bold tracking-tight">TASKER</span>
+          <span className="text-xl font-bold tracking-tight">Guchai</span>
         </div>
 
         <form

@@ -70,7 +70,7 @@ function fireOvertime(task: Task) {
     ) {
       const n = new Notification("⚠️ Overtime Alert — Velocity", {
         body,
-        icon: "/favicon.ico",
+        icon: "/favicon.png",
         tag: `overtime-${task.id}`,
         requireInteraction: true,
       });

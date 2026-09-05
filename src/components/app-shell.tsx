@@ -1,23 +1,20 @@
-import { useState } from "react";
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import type { ReactNode } from "react";
-import {
-  LayoutDashboard,
-  CalendarDays,
-  BarChart3,
-  TrendingUp,
-  LogOut,
-  Palette,
-  Menu,
-  X,
-  Plus,
-} from "lucide-react";
-import { useTheme, THEMES } from "@/components/theme-provider";
-import { useTodayDashboardStats } from "@/hooks/use-tasks";
-import { OvertimeMonitor } from "@/components/overtime-monitor";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { AddTaskDialog } from "@/components/add-task-dialog";
-import { todayStr } from "@/hooks/use-tasks";
+import { OvertimeMonitor } from "@/components/overtime-monitor";
+import { THEMES, useTheme } from "@/components/theme-provider";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { todayStr, useTodayDashboardStats } from "@/hooks/use-tasks";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import {
+  BarChart3,
+  CalendarDays,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Palette,
+  TrendingUp,
+} from "lucide-react";
+import type { ReactNode } from "react";
+import { useState } from "react";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -43,9 +40,9 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       {/* Logo */}
       <Link to="/dashboard" onClick={onNavClick} className="mb-10 flex items-center gap-3 shrink-0">
         <div className="size-8 bg-brand rounded-lg grid place-items-center font-black text-brand-foreground">
-          T
+          G
         </div>
-        <span className="text-xl font-bold tracking-tight">TASKER</span>
+        <span className="text-xl font-bold tracking-tight">Guchai</span>
       </Link>
 
       {/* Nav */}
@@ -121,9 +118,11 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const stats = useTodayDashboardStats();
 
   return (
-    <div className="min-h-screen bg-bg-primary text-text-main selection:bg-brand/30">
+    <div className="min-h-screen bg-bg-primary text-text-main selection:bg-brand/30 pb-16 lg:pb-0">
       <OvertimeMonitor />
 
       {/* ─── DESKTOP SIDEBAR — unchanged at lg+ ─── */}
@@ -133,29 +132,29 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* ─── MOBILE HEADER BAR — only visible below lg ─── */}
       <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between gap-3 px-4 h-14 border-b border-border bg-bg-primary/90 backdrop-blur-md">
-        {/* Left: Hamburger */}
-        <button
-          onClick={() => setMobileOpen(true)}
-          aria-label="Open navigation"
-          className="p-2 -ml-1 rounded-lg text-text-dim hover:text-text-main hover:bg-white/5 transition"
-        >
-          <Menu className="size-5" />
-        </button>
-
-        {/* Center: Logo */}
+        {/* Left: Logo */}
         <Link to="/dashboard" className="flex items-center gap-2">
           <div className="size-7 bg-brand rounded-md grid place-items-center font-black text-brand-foreground text-sm">
-            T
+            G
           </div>
-          <span className="text-base font-bold tracking-tight">TASKER</span>
+          <span className="text-base font-bold tracking-tight">Guchai</span>
         </Link>
 
-        {/* Right: Quick add */}
-        <AddTaskDialog
-          defaultDate={todayStr()}
-          triggerLabel="Add"
-          triggerClassName="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand text-brand-foreground font-bold text-xs hover:brightness-110 transition"
-        />
+        {/* Right: Compressed Stats */}
+        <div className="flex items-center gap-3 text-right">
+          <div className="flex flex-col items-end">
+            <span className="text-[9px] font-bold text-brand uppercase tracking-widest leading-none mb-1">Worked</span>
+            <span className="text-xs font-mono font-medium leading-none">{stats.workedLabel}</span>
+          </div>
+          <div className="flex flex-col items-end">
+            <span className="text-[9px] font-bold text-brand uppercase tracking-widest leading-none mb-1">Planned</span>
+            <span className="text-xs font-mono font-medium leading-none">{stats.plannedLabel}</span>
+          </div>
+          <div className="flex flex-col items-end">
+            <span className="text-[9px] font-bold text-brand uppercase tracking-widest leading-none mb-1">Tasks</span>
+            <span className="text-xs font-mono font-medium leading-none">{stats.total}</span>
+          </div>
+        </div>
       </header>
 
       {/* ─── MOBILE SIDEBAR SHEET ─── */}
@@ -172,6 +171,33 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* ─── MAIN CONTENT ─── */}
       {/* lg:pl-64 preserves exact desktop layout; mobile has no left padding */}
       <main className="lg:pl-64">{children}</main>
+
+      {/* ─── MOBILE BOTTOM NAV ─── */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around h-16 border-t border-border bg-bg-primary/90 backdrop-blur-md px-1 pb-[env(safe-area-inset-bottom)]">
+        {nav.map((item) => {
+          const active = pathname === item.to;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`flex flex-col items-center justify-center w-full h-full gap-1 text-[10px] font-medium transition-all ${
+                active ? "text-brand" : "text-text-dim hover:text-text-main"
+              }`}
+            >
+              <Icon className="size-5" />
+              <span className="truncate">{item.label}</span>
+            </Link>
+          );
+        })}
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="flex flex-col items-center justify-center w-full h-full gap-1 text-[10px] font-medium text-text-dim hover:text-text-main transition-all"
+        >
+          <Menu className="size-5" />
+          <span className="truncate">More</span>
+        </button>
+      </nav>
     </div>
   );
 }
