@@ -3,6 +3,7 @@ import { useState } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { useTasksByDate, todayStr, tomorrowStr, type Task } from "@/hooks/use-tasks";
 import { AddTaskDialog } from "@/components/add-task-dialog";
+import { EditTaskDialog } from "@/components/edit-task-dialog";
 import { ChevronLeft, ChevronRight, Trash2, Loader2 } from "lucide-react";
 import { useDeleteTask } from "@/hooks/use-tasks";
 
@@ -122,6 +123,7 @@ function Planning() {
                     >
                       {t.priority}
                     </span>
+                    <EditTaskDialog task={t} />
                     <button
                       onClick={() => del.mutate(t.id)}
                       aria-label="Delete task"

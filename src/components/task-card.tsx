@@ -1,15 +1,14 @@
-import { useState, useEffect } from "react";
 import {
   elapsedSeconds,
   formatDuration,
   plannedDurationSeconds,
   useUpdateStatus,
-  useDeleteTask,
-  type Task,
   type Status,
+  type Task,
 } from "@/hooks/use-tasks";
 import { format } from "date-fns";
-import { Trash2, Play, Pause, Check, RotateCcw, GripVertical } from "lucide-react";
+import { Check, GripVertical, Pause, Play, RotateCcw } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const priorityStyle: Record<Task["priority"], string> = {
@@ -22,7 +21,6 @@ const priorityStyle: Record<Task["priority"], string> = {
 export function TaskCard({ task }: { task: Task }) {
   const [, setTick] = useState(0);
   const update = useUpdateStatus();
-  const del = useDeleteTask();
 
   const isRunning = task.status === "in_progress";
   useEffect(() => {
@@ -146,14 +144,6 @@ export function TaskCard({ task }: { task: Task }) {
             <RotateCcw className="size-3" /> Reopen
           </button>
         )}
-        <button
-          onClick={() => del.mutate(task.id)}
-          className="p-2 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:p-1.5 rounded-lg text-text-dim hover:text-danger hover:bg-danger/10 flex items-center justify-center"
-          title="Delete task"
-          aria-label="Delete task"
-        >
-          <Trash2 className="size-3.5" />
-        </button>
       </div>
     </div>
   );
