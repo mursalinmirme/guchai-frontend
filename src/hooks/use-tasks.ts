@@ -56,8 +56,12 @@ export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: {
-      title: string; details?: string; priority: Priority; task_date: string;
-      planned_start: string; planned_end: string;
+      title: string;
+      details?: string;
+      priority: Priority;
+      task_date: string;
+      planned_start: string;
+      planned_end: string;
     }) => {
       return await taskApi.createTask(input);
     },
@@ -87,7 +91,9 @@ export function elapsedSeconds(task: Task, now: number = Date.now()): number {
 export function plannedDurationSeconds(task: Task): number {
   return Math.max(
     0,
-    Math.floor((new Date(task.planned_end).getTime() - new Date(task.planned_start).getTime()) / 1000),
+    Math.floor(
+      (new Date(task.planned_end).getTime() - new Date(task.planned_start).getTime()) / 1000,
+    ),
   );
 }
 
@@ -159,7 +165,11 @@ export function useTodayDashboardStats() {
     const planned = tasks.reduce((s, t) => s + plannedDurationSeconds(t), 0);
     const score = total === 0 ? 0 : Math.round((completed / total) * 100);
     return {
-      total, completed, worked, planned, score,
+      total,
+      completed,
+      worked,
+      planned,
+      score,
       workedLabel: formatHM(worked),
       plannedLabel: formatHM(planned),
     };

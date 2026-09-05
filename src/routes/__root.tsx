@@ -20,7 +20,10 @@ function NotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-text-main">404</h1>
         <p className="mt-2 text-sm text-text-dim">This route drifted off the flight path.</p>
-        <Link to="/" className="mt-6 inline-flex rounded-md bg-brand px-4 py-2 text-sm font-bold text-brand-foreground">
+        <Link
+          to="/"
+          className="mt-6 inline-flex rounded-md bg-brand px-4 py-2 text-sm font-bold text-brand-foreground"
+        >
           Return to base
         </Link>
       </div>
@@ -40,12 +43,18 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-text-dim">Try again, or head back to the dashboard.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="rounded-md bg-brand px-4 py-2 text-sm font-bold text-brand-foreground"
           >
             Try again
           </button>
-          <a href="/" className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-main">
+          <a
+            href="/"
+            className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-main"
+          >
             Go home
           </a>
         </div>
@@ -60,9 +69,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Tasker __ Your Personal Task Command Center" },
-      { name: "description", content: "Plan tomorrow, run today. Live timers, overtime alerts, and deep analytics for a self-improving day." },
+      {
+        name: "description",
+        content:
+          "Plan tomorrow, run today. Live timers, overtime alerts, and deep analytics for a self-improving day.",
+      },
       { property: "og:title", content: "Tasker — Personal Task Command Center" },
-      { property: "og:description", content: "Plan tomorrow, run today. Live timers, overtime alerts, and analytics for a focused day." },
+      {
+        property: "og:description",
+        content:
+          "Plan tomorrow, run today. Live timers, overtime alerts, and analytics for a focused day.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

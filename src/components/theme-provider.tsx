@@ -19,7 +19,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeName>("midnight");
 
   useEffect(() => {
-    const stored = (typeof window !== "undefined" && (localStorage.getItem(STORAGE_KEY) as ThemeName)) || "midnight";
+    const stored =
+      (typeof window !== "undefined" && (localStorage.getItem(STORAGE_KEY) as ThemeName)) ||
+      "midnight";
     setThemeState(stored);
     document.documentElement.setAttribute("data-theme", stored);
   }, []);
@@ -27,7 +29,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setTheme = useCallback((t: ThemeName) => {
     setThemeState(t);
     document.documentElement.setAttribute("data-theme", t);
-    try { localStorage.setItem(STORAGE_KEY, t); } catch {}
+    try {
+      localStorage.setItem(STORAGE_KEY, t);
+    } catch {}
   }, []);
 
   return <ThemeCtx.Provider value={{ theme, setTheme }}>{children}</ThemeCtx.Provider>;

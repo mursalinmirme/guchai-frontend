@@ -2,7 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
-  useTasksByDate, useUpdateStatus, todayStr, elapsedSeconds, plannedDurationSeconds, type Task, type Status,
+  useTasksByDate,
+  useUpdateStatus,
+  todayStr,
+  elapsedSeconds,
+  plannedDurationSeconds,
+  type Task,
+  type Status,
 } from "@/hooks/use-tasks";
 import { TaskCard } from "@/components/task-card";
 import { AddTaskDialog } from "@/components/add-task-dialog";
@@ -50,22 +56,34 @@ function Dashboard() {
 
   return (
     <div>
-      <header className="h-20 border-b border-border flex items-center justify-between px-8 bg-bg-primary/80 backdrop-blur-md sticky top-0 z-20">
-        <div>
-          <h1 className="text-sm text-text-dim">{format(new Date(), "EEEE, d MMMM")}</h1>
-          <p className="text-xl font-bold tracking-tight">Today's Board</p>
+      {/* ── HEADER ── */}
+      <header className="min-h-14 lg:h-20 border-b border-border flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 py-3 lg:py-0 bg-bg-primary/80 backdrop-blur-md sticky top-14 lg:top-0 z-20">
+        <div className="min-w-0">
+          <h1 className="text-xs sm:text-sm text-text-dim truncate">
+            {format(new Date(), "EEEE, d MMMM")}
+          </h1>
+          <p className="text-base sm:text-xl font-bold tracking-tight">Today's Board</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Stats — hidden on mobile, visible from md+ */}
           <div className="hidden md:flex items-center gap-4 text-xs">
             <Stat label="Worked" value={formatShort(totalWorked)} />
             <Stat label="Planned" value={formatShort(totalPlanned)} />
             <Stat label="Tasks" value={String((data ?? []).length)} />
           </div>
-          <AddTaskDialog defaultDate={date} triggerLabel="+ Plan New Task" />
+          {/* Desktop trigger — hidden on mobile (mobile uses the shell header button) */}
+          <div className="hidden lg:block">
+            <AddTaskDialog defaultDate={date} triggerLabel="+ Plan New Task" />
+          </div>
+          {/* Tablet trigger — compact */}
+          <div className="lg:hidden">
+            <AddTaskDialog defaultDate={date} triggerLabel="+ Add" />
+          </div>
         </div>
       </header>
 
-      <div className="p-8">
+      {/* ── BOARD ── */}
+      <div className="p-4 sm:p-6 lg:p-8">
         {isLoading ? (
           <div className="flex items-center justify-center py-24 text-text-dim">
             <Loader2 className="size-5 animate-spin mr-2" /> Loading tasks…
@@ -80,17 +98,28 @@ function Dashboard() {
               return (
                 <div
                   key={col.id}
-                  onDragOver={(e) => { e.preventDefault(); setDragOver(col.id); }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOver(col.id);
+                  }}
                   onDragLeave={() => setDragOver((v) => (v === col.id ? null : v))}
                   onDrop={(e) => onDrop(e, col.id)}
-                  className={`rounded-2xl transition-colors p-2 -m-2 min-h-[400px] ${isOver ? "bg-brand/5 ring-1 ring-brand/30" : ""}`}
+                  className={`rounded-2xl transition-colors p-2 -m-2 min-h-[300px] lg:min-h-[400px] ${isOver ? "bg-brand/5 ring-1 ring-brand/30" : ""}`}
                 >
                   <div className="flex items-center justify-between px-2 mb-4">
                     <div className="flex items-center gap-2">
-                      <div className={`size-2 rounded-full ${col.id === "in_progress" ? "bg-brand animate-pulse" : col.id === "complete" ? "bg-success" : "bg-text-dim"}`} />
-                      <h2 className={`font-semibold uppercase text-xs tracking-widest ${col.accent}`}>{col.label}</h2>
+                      <div
+                        className={`size-2 rounded-full ${col.id === "in_progress" ? "bg-brand animate-pulse" : col.id === "complete" ? "bg-success" : "bg-text-dim"}`}
+                      />
+                      <h2
+                        className={`font-semibold uppercase text-xs tracking-widest ${col.accent}`}
+                      >
+                        {col.label}
+                      </h2>
                     </div>
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${col.id === "in_progress" ? "bg-brand/10 text-brand" : col.id === "complete" ? "bg-success/10 text-success" : "bg-white/5 text-text-dim"}`}>
+                    <span
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded ${col.id === "in_progress" ? "bg-brand/10 text-brand" : col.id === "complete" ? "bg-success/10 text-success" : "bg-white/5 text-text-dim"}`}
+                    >
                       {String(items.length).padStart(2, "0")}
                     </span>
                   </div>
@@ -100,7 +129,9 @@ function Dashboard() {
                         Drop tasks here
                       </div>
                     )}
-                    {items.map((t) => <TaskCard key={t.id} task={t} />)}
+                    {items.map((t) => (
+                      <TaskCard key={t.id} task={t} />
+                    ))}
                   </div>
                 </div>
               );
@@ -123,13 +154,14 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function EmptyState() {
   return (
-    <div className="glass-card rounded-3xl p-16 text-center max-w-xl mx-auto mt-16">
+    <div className="glass-card rounded-3xl p-8 sm:p-16 text-center max-w-xl mx-auto mt-8 sm:mt-16">
       <div className="size-16 mx-auto rounded-2xl bg-brand/10 grid place-items-center mb-4">
         <span className="text-2xl font-black text-brand">V</span>
       </div>
-      <h2 className="text-2xl font-bold mb-2">No tasks planned for today</h2>
+      <h2 className="text-xl sm:text-2xl font-bold mb-2">No tasks planned for today</h2>
       <p className="text-sm text-text-dim mb-6">
-        Head over to <span className="text-brand font-semibold">Planning</span> to prepare tomorrow, or plan one for right now.
+        Head over to <span className="text-brand font-semibold">Planning</span> to prepare tomorrow,
+        or plan one for right now.
       </p>
       <AddTaskDialog defaultDate={todayStr()} triggerLabel="+ Plan a task now" />
     </div>

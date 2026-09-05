@@ -1,5 +1,11 @@
 import { useEffect, useRef } from "react";
-import { useTasksByDate, todayStr, elapsedSeconds, plannedDurationSeconds, type Task } from "@/hooks/use-tasks";
+import {
+  useTasksByDate,
+  todayStr,
+  elapsedSeconds,
+  plannedDurationSeconds,
+  type Task,
+} from "@/hooks/use-tasks";
 import { toast } from "sonner";
 
 /**
@@ -57,7 +63,11 @@ function fireOvertime(task: Task) {
   const body = `"${task.title}" has exceeded its planned duration. Overtime is being tracked.`;
   toast.warning("Overtime alert", { description: body, duration: 8000 });
   try {
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+    if (
+      typeof window !== "undefined" &&
+      "Notification" in window &&
+      Notification.permission === "granted"
+    ) {
       const n = new Notification("⚠️ Overtime Alert — Velocity", {
         body,
         icon: "/favicon.ico",

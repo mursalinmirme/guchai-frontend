@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import {
-  elapsedSeconds, formatDuration, plannedDurationSeconds, useUpdateStatus, useDeleteTask,
-  type Task, type Status,
+  elapsedSeconds,
+  formatDuration,
+  plannedDurationSeconds,
+  useUpdateStatus,
+  useDeleteTask,
+  type Task,
+  type Status,
 } from "@/hooks/use-tasks";
 import { format } from "date-fns";
 import { Trash2, Play, Pause, Check, RotateCcw, GripVertical } from "lucide-react";
@@ -55,28 +60,35 @@ export function TaskCard({ task }: { task: Task }) {
     >
       <GripVertical className="absolute top-2 right-2 size-3.5 text-text-dim opacity-0 group-hover:opacity-100" />
 
-      <div className="flex justify-between items-start mb-3 gap-2">
-        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-tight ${priorityStyle[task.priority]}`}>
+      <div className="flex flex-wrap justify-between items-start mb-3 gap-x-2 gap-y-1">
+        <span
+          className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-tight ${priorityStyle[task.priority]}`}
+        >
           {task.priority}
         </span>
         <span className="text-[10px] font-mono text-text-dim">
-          {format(new Date(task.planned_start), "HH:mm")} — {format(new Date(task.planned_end), "HH:mm")}
+          {format(new Date(task.planned_start), "HH:mm")} —{" "}
+          {format(new Date(task.planned_end), "HH:mm")}
         </span>
       </div>
 
-      <h3 className={`font-semibold text-base leading-snug mb-1.5 ${task.status === "complete" ? "line-through text-text-dim" : ""}`}>
+      <h3
+        className={`font-semibold text-base leading-snug mb-1.5 ${task.status === "complete" ? "line-through text-text-dim" : ""}`}
+      >
         {task.title}
       </h3>
-      {task.details && (
-        <p className="text-xs text-text-dim line-clamp-2 mb-3">{task.details}</p>
-      )}
+      {task.details && <p className="text-xs text-text-dim line-clamp-2 mb-3">{task.details}</p>}
 
       {(isRunning || elapsed > 0) && (
-        <div className={`bg-bg-primary/50 rounded-xl p-3 border ${isOvertime ? "border-danger/30" : "border-border"}`}>
+        <div
+          className={`bg-bg-primary/50 rounded-xl p-3 border ${isOvertime ? "border-danger/30" : "border-border"}`}
+        >
           <div className="flex justify-between items-end mb-2">
             <div>
               <p className="text-[9px] uppercase font-bold text-text-dim">Elapsed</p>
-              <p className={`text-xl font-mono font-bold ${isOvertime ? "text-danger timer-glow-danger" : "text-brand timer-glow"}`}>
+              <p
+                className={`text-xl font-mono font-bold ${isOvertime ? "text-danger timer-glow-danger" : "text-brand timer-glow"}`}
+              >
                 {formatDuration(elapsed)}
               </p>
             </div>
@@ -86,7 +98,9 @@ export function TaskCard({ task }: { task: Task }) {
                 {formatDuration(planned)}
               </p>
               {isOvertime && (
-                <p className="text-[10px] font-mono font-bold text-danger">+{formatDuration(elapsed - planned)}</p>
+                <p className="text-[10px] font-mono font-bold text-danger">
+                  +{formatDuration(elapsed - planned)}
+                </p>
               )}
             </div>
           </div>
@@ -101,33 +115,42 @@ export function TaskCard({ task }: { task: Task }) {
 
       <div className="flex items-center gap-1.5 mt-3">
         {task.status === "pending" && (
-          <button onClick={() => changeStatus("in_progress")}
-            className="flex-1 text-[10px] font-bold uppercase tracking-wider py-1.5 rounded-lg bg-brand/10 text-brand hover:bg-brand/20 transition flex items-center justify-center gap-1">
+          <button
+            onClick={() => changeStatus("in_progress")}
+            className="flex-1 text-[10px] font-bold uppercase tracking-wider py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0 rounded-lg bg-brand/10 text-brand hover:bg-brand/20 transition flex items-center justify-center gap-1"
+          >
             <Play className="size-3" /> Start
           </button>
         )}
         {task.status === "in_progress" && (
           <>
-            <button onClick={() => changeStatus("pending")}
-              className="flex-1 text-[10px] font-bold uppercase tracking-wider py-1.5 rounded-lg bg-white/5 text-text-dim hover:bg-white/10 transition flex items-center justify-center gap-1">
+            <button
+              onClick={() => changeStatus("pending")}
+              className="flex-1 text-[10px] font-bold uppercase tracking-wider py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0 rounded-lg bg-white/5 text-text-dim hover:bg-white/10 transition flex items-center justify-center gap-1"
+            >
               <Pause className="size-3" /> Pause
             </button>
-            <button onClick={() => changeStatus("complete")}
-              className="flex-1 text-[10px] font-bold uppercase tracking-wider py-1.5 rounded-lg bg-success/10 text-success hover:bg-success/20 transition flex items-center justify-center gap-1">
+            <button
+              onClick={() => changeStatus("complete")}
+              className="flex-1 text-[10px] font-bold uppercase tracking-wider py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0 rounded-lg bg-success/10 text-success hover:bg-success/20 transition flex items-center justify-center gap-1"
+            >
               <Check className="size-3" /> Done
             </button>
           </>
         )}
         {task.status === "complete" && (
-          <button onClick={() => changeStatus("pending")}
-            className="flex-1 text-[10px] font-bold uppercase tracking-wider py-1.5 rounded-lg bg-white/5 text-text-dim hover:bg-white/10 transition flex items-center justify-center gap-1">
+          <button
+            onClick={() => changeStatus("pending")}
+            className="flex-1 text-[10px] font-bold uppercase tracking-wider py-2.5 sm:py-1.5 min-h-[44px] sm:min-h-0 rounded-lg bg-white/5 text-text-dim hover:bg-white/10 transition flex items-center justify-center gap-1"
+          >
             <RotateCcw className="size-3" /> Reopen
           </button>
         )}
         <button
           onClick={() => del.mutate(task.id)}
-          className="p-1.5 rounded-lg text-text-dim hover:text-danger hover:bg-danger/10"
+          className="p-2 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:p-1.5 rounded-lg text-text-dim hover:text-danger hover:bg-danger/10 flex items-center justify-center"
           title="Delete task"
+          aria-label="Delete task"
         >
           <Trash2 className="size-3.5" />
         </button>

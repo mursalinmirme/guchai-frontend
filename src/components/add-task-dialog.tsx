@@ -1,6 +1,11 @@
 import { useState } from "react";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { useCreateTask, tomorrowStr, type Priority } from "@/hooks/use-tasks";
@@ -45,12 +50,19 @@ export function AddTaskDialog({
       await create.mutateAsync({
         title: title.trim(),
         details: details.trim() || undefined,
-        priority, task_date: date, planned_start, planned_end,
+        priority,
+        task_date: date,
+        planned_start,
+        planned_end,
       });
       toast.success("Task queued", {
         description: `Scheduled for ${format(new Date(planned_start), "EEE d MMM, HH:mm")}`,
       });
-      setTitle(""); setDetails(""); setPriority("medium"); setStartTime("09:00"); setEndTime("10:00");
+      setTitle("");
+      setDetails("");
+      setPriority("medium");
+      setStartTime("09:00");
+      setEndTime("10:00");
       setOpen(false);
     } catch (err) {
       toast.error((err as Error).message);
@@ -69,56 +81,83 @@ export function AddTaskDialog({
           <Plus className="size-4" /> {triggerLabel}
         </button>
       </DialogTrigger>
-      <DialogContent className="bg-surface-elevated border-border text-text-main sm:max-w-md">
+      <DialogContent className="bg-surface-elevated border-border text-text-main sm:max-w-md max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Plan a task</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <label className="block">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Title</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+              Title
+            </span>
             <input
-              value={title} onChange={(e) => setTitle(e.target.value)} required autoFocus
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              autoFocus
               placeholder="Refactor auth flow"
               className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm outline-none focus:border-brand"
             />
           </label>
           <label className="block">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Details</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+              Details
+            </span>
             <textarea
-              value={details} onChange={(e) => setDetails(e.target.value)} rows={2}
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+              rows={2}
               placeholder="Optional notes, sub-steps, links…"
               className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm outline-none focus:border-brand resize-none"
             />
           </label>
           <label className="block">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Date</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+              Date
+            </span>
             <input
-              type="date" value={date} onChange={(e) => setDate(e.target.value)}
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
               className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm outline-none focus:border-brand font-mono"
             />
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Start</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+                Start
+              </span>
               <input
-                type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                required
                 className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm font-mono outline-none focus:border-brand"
               />
             </label>
             <label className="block">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">End</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+                End
+              </span>
               <input
-                type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                required
                 className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm font-mono outline-none focus:border-brand"
               />
             </label>
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">Priority</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+              Priority
+            </span>
             <div className="mt-1 grid grid-cols-4 gap-1.5">
               {PRIORITIES.map((p) => (
                 <button
-                  type="button" key={p.id} onClick={() => setPriority(p.id)}
+                  type="button"
+                  key={p.id}
+                  onClick={() => setPriority(p.id)}
                   className={`py-2 text-xs font-semibold rounded-lg border transition ${
                     priority === p.id
                       ? "bg-brand text-brand-foreground border-brand"
@@ -132,7 +171,8 @@ export function AddTaskDialog({
           </div>
           <DialogFooter>
             <button
-              type="submit" disabled={create.isPending}
+              type="submit"
+              disabled={create.isPending}
               className="w-full rounded-full bg-brand text-brand-foreground py-2.5 font-bold text-sm flex items-center justify-center gap-2 hover:brightness-110 disabled:opacity-60"
             >
               {create.isPending && <Loader2 className="size-4 animate-spin" />}
