@@ -83,7 +83,7 @@ export function useVoiceOutput() {
       utterance.voice = preferredVoice;
     }
     
-    utterance.rate = 1.05; // Slightly faster than default
+    utterance.rate = 0.90; // Slightly faster than default
     utterance.pitch = 1;
     
     utterance.onstart = () => setIsSpeaking(true);
