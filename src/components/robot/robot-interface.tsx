@@ -1,5 +1,6 @@
 import { useEffect, useRef, KeyboardEvent, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
 import {
   BrainCircuit,
   CheckCircle,
@@ -112,7 +113,9 @@ function MessageBubble({ msg }: { msg: ConversationMessage }) {
             <span className="text-xs opacity-60">Working on it…</span>
           </div>
         ) : (
-          <span style={{ whiteSpace: "pre-wrap" }}>{msg.content}</span>
+          <div className="[&>p]:mb-2 [&>p:last-child]:mb-0 [&>ul]:list-disc [&>ul]:pl-4 [&>ul]:mb-2 [&>ul:last-child]:mb-0 [&>ol]:list-decimal [&>ol]:pl-4 [&>ol]:mb-2 [&>ol:last-child]:mb-0 [&>ul>li]:mb-1 [&>ul>li:last-child]:mb-0 [&>ol>li]:mb-1 [&>ol>li:last-child]:mb-0 [&_strong]:font-bold [&_em]:italic">
+            <ReactMarkdown>{msg.content}</ReactMarkdown>
+          </div>
         )}
       </div>
 
