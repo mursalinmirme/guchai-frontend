@@ -50,10 +50,19 @@ export function useRobot() {
     stopSpeaking,
   } = useVoiceOutput();
 
+  // Always-current refs — prevents stale closures in callbacks and sendMessage
+  const voiceEnabledRef = useRef(voiceEnabled);
+  voiceEnabledRef.current = voiceEnabled;
+  const speakRef = useRef(speak);
+  speakRef.current = speak;
+
+  // Ref so handleTranscript can always call the *latest* sendMessage
+  const sendMessageRef = useRef<(text: string) => void>(() => {});
+
   const handleTranscript = useCallback((text: string) => {
     setInputValue(text);
-    // Auto-send when voice is recognized
-    sendMessage(text);
+    // Call via ref so we always get the latest sendMessage, not a stale closure
+    sendMessageRef.current(text);
   }, []);
 
   const handleVoiceError = useCallback((err: string) => {
@@ -191,9 +200,9 @@ export function useRobot() {
           queryClient.invalidateQueries({ queryKey: ["tasks"] });
         }
 
-        // Speak response if voice is enabled
-        if (voiceEnabled && response.reply) {
-          speak(response.reply);
+        // Speak response if voice is enabled — read via ref to avoid stale closure
+        if (voiceEnabledRef.current && response.reply) {
+          speakRef.current(response.reply);
         }
 
         // Briefly show success, then return to idle (or speaking if voice is active)
@@ -229,6 +238,9 @@ export function useRobot() {
     },
     [robotState, conversation, queryClient]
   );
+
+  // Keep sendMessageRef in sync with the latest sendMessage
+  sendMessageRef.current = sendMessage;
 
   const clearConversation = useCallback(() => {
     setConversation([]);
