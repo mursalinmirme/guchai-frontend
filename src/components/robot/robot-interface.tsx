@@ -122,7 +122,7 @@ function MessageBubble({ msg }: { msg: ConversationMessage }) {
 
       {/* Timestamp */}
       <span className="text-[10px] opacity-40 px-1">
-        {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        {msg.timestamp.toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Dhaka" })}
       </span>
     </motion.div>
   );
