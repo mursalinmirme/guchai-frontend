@@ -1,23 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { robotApi, ChatMessage, ToolExecution } from "@/api/robot.api";
 import { useVoiceInput } from "./use-voice-input";
 import { useVoiceOutput } from "./use-voice-output";
+import { alenaStateMachine, AlenaState, AlenaEmotion } from "@/services/alenaStateMachine";
+import { alenaRealtimeService } from "@/services/alenaRealtimeService";
+import { wakeWordEngine } from "@/services/wakeWordEngine";
 
-// ─────────────────────────────────────────────────────────────
-// Robot State Machine
-// ─────────────────────────────────────────────────────────────
-
-export type RobotState =
-  | "IDLE"
-  | "LISTENING"
-  | "THINKING"
-  | "PROCESSING"
-  | "RESPONDING"
-  | "SPEAKING"
-  | "PROACTIVE"
-  | "SUCCESS"
-  | "ERROR";
+export type { AlenaState, AlenaEmotion };
 
 export interface ConversationMessage {
   id: string;
@@ -28,17 +18,56 @@ export interface ConversationMessage {
   isProcessing?: boolean;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Hook
-// ─────────────────────────────────────────────────────────────
-
-export function useRobot() {
+export function useAlena() {
   const [isOpen, setIsOpen] = useState(false);
-  const [robotState, setRobotState] = useState<RobotState>("IDLE");
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
-  const [statusLabel, setStatusLabel] = useState<string>("");
   const [inputValue, setInputValue] = useState("");
   const queryClient = useQueryClient();
+
+  // Fetch user preferences (stale-while-revalidate, fast)
+  const { data: prefs } = useQuery({
+    queryKey: ["robot_preferences"],
+    queryFn: robotApi.getPreferences,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const wakeWordEnabled = prefs?.wakeWordEnabled ?? true;
+
+  useEffect(() => {
+    // Use a ref-guard so React StrictMode double-invoke doesn't disconnect on the
+    // first unmount and then fail to reconnect on the second mount.
+    let active = true;
+    const token = localStorage.getItem("token");
+    if (token && active) {
+      alenaRealtimeService.connect(token);
+    }
+    return () => {
+      active = false;
+      // Only fully disconnect on a real unmount (not a StrictMode double-invoke).
+      // A short delay allows the second mount cycle to reconnect cleanly.
+      setTimeout(() => {
+        if (!active) {
+          alenaRealtimeService.disconnect();
+        }
+      }, 200);
+    };
+  }, []);
+
+  // Sync with AlenaStateMachine
+  const alenaState = useSyncExternalStore(
+    alenaStateMachine.subscribe.bind(alenaStateMachine),
+    () => alenaStateMachine.getState()
+  );
+  
+  const emotion = useSyncExternalStore(
+    alenaStateMachine.subscribe.bind(alenaStateMachine),
+    () => alenaStateMachine.getEmotion()
+  );
+
+  const statusLabel = useSyncExternalStore(
+    alenaStateMachine.subscribe.bind(alenaStateMachine),
+    () => alenaStateMachine.getStatusLabel()
+  );
 
   // Voice Hooks
   const {
@@ -50,27 +79,22 @@ export function useRobot() {
     stopSpeaking,
   } = useVoiceOutput();
 
-  // Always-current refs — prevents stale closures in callbacks and sendMessage
   const voiceEnabledRef = useRef(voiceEnabled);
   voiceEnabledRef.current = voiceEnabled;
   const speakRef = useRef(speak);
   speakRef.current = speak;
 
-  // Ref so handleTranscript can always call the *latest* sendMessage
   const sendMessageRef = useRef<(text: string) => void>(() => {});
 
   const handleTranscript = useCallback((text: string) => {
     setInputValue(text);
-    // Call via ref so we always get the latest sendMessage, not a stale closure
     sendMessageRef.current(text);
   }, []);
 
   const handleVoiceError = useCallback((err: string) => {
-    setRobotState("ERROR");
-    setStatusLabel(err);
+    alenaStateMachine.transitionTo("ERROR", err);
     setTimeout(() => {
-      setRobotState("IDLE");
-      setStatusLabel("");
+      alenaStateMachine.transitionTo("IDLE", "");
     }, 3000);
   }, []);
 
@@ -84,41 +108,66 @@ export function useRobot() {
     onError: handleVoiceError,
   });
 
-  // Sync isListening -> LISTENING state
+  // Natural Interruption Support
+  const handleWakeWord = useCallback(() => {
+    if (isSpeaking) {
+      stopSpeaking(); // Interrupt Alena's current speech
+    }
+    if (!isOpen) {
+      setIsOpen(true);
+    }
+    startListening();
+  }, [isSpeaking, stopSpeaking, isOpen, startListening]);
+
+  useEffect(() => {
+    if (!wakeWordEnabled) {
+      wakeWordEngine.stopListening();
+      return;
+    }
+    // Only listen for wake word if we are not actively listening for a command
+    if (!isListening) {
+      wakeWordEngine.startListening(handleWakeWord);
+    } else {
+      wakeWordEngine.stopListening();
+    }
+    return () => {
+      wakeWordEngine.stopListening();
+    };
+  }, [isListening, handleWakeWord, wakeWordEnabled]);
+
+  // Sync voice input state
   useEffect(() => {
     if (isListening) {
-      setRobotState("LISTENING");
-      setStatusLabel("Listening...");
-    } else if (robotState === "LISTENING") {
-      setRobotState("IDLE");
-      setStatusLabel("");
+      alenaStateMachine.transitionTo("LISTENING", "Listening...");
+    } else if (alenaState === "LISTENING") {
+      alenaStateMachine.transitionTo("IDLE", "");
     }
-  }, [isListening, robotState]);
+  }, [isListening]);
 
-  // Sync isSpeaking -> SPEAKING state
+  // Sync voice output state
   useEffect(() => {
-    if (isSpeaking && robotState === "SUCCESS") {
-      setRobotState("SPEAKING");
-    } else if (!isSpeaking && robotState === "SPEAKING") {
-      setRobotState("IDLE");
+    if (isSpeaking && alenaState === "COMPLETED") {
+      alenaStateMachine.transitionTo("SPEAKING");
+    } else if (!isSpeaking && alenaState === "SPEAKING") {
+      alenaStateMachine.transitionTo("IDLE");
     }
-  }, [isSpeaking, robotState]);
+  }, [isSpeaking]);
 
   const processingMsgIdRef = useRef<string | null>(null);
 
   const open = useCallback(() => {
     setIsOpen(true);
-    setRobotState("IDLE");
+    alenaStateMachine.transitionTo("IDLE");
   }, []);
 
   const close = useCallback(() => {
     setIsOpen(false);
-    setRobotState("IDLE");
+    alenaStateMachine.transitionTo("IDLE");
   }, []);
 
   const sendMessage = useCallback(
     async (text: string) => {
-      if (!text.trim() || robotState === "THINKING" || robotState === "PROCESSING") return;
+      if (!text.trim() || alenaState === "THINKING" || alenaState === "WORKING") return;
 
       const userMsg: ConversationMessage = {
         id: crypto.randomUUID(),
@@ -127,7 +176,6 @@ export function useRobot() {
         timestamp: new Date(),
       };
 
-      // Placeholder for assistant response while loading
       const processingMsgId = crypto.randomUUID();
       processingMsgIdRef.current = processingMsgId;
       const processingMsg: ConversationMessage = {
@@ -139,12 +187,10 @@ export function useRobot() {
       };
 
       setConversation((prev) => [...prev, userMsg, processingMsg]);
-      setRobotState("THINKING");
-      setStatusLabel("Thinking…");
+      alenaStateMachine.transitionTo("THINKING", "Thinking…");
       setInputValue("");
 
       try {
-        // Build message history for the API (last 20 messages for context)
         const historyForApi: ChatMessage[] = [
           ...conversation.slice(-18).map((m) => ({
             role: m.role,
@@ -153,31 +199,15 @@ export function useRobot() {
           { role: "user" as const, content: text.trim() },
         ];
 
-        // Update status as tools start running
-        const statusInterval = setInterval(() => {
-          setRobotState((prev) => {
-            if (prev === "THINKING") return "PROCESSING";
-            return prev;
-          });
-          setStatusLabel((prev) => {
-            if (prev === "Thinking…") return "Processing…";
-            return prev;
-          });
-        }, 1200);
-
         const response = await robotApi.chat(historyForApi);
 
-        clearInterval(statusInterval);
-
-        // Update the processing tool label during execution
         if (response.toolExecutions?.length > 0) {
           const lastTool = response.toolExecutions[response.toolExecutions.length - 1];
-          setStatusLabel(lastTool.label);
+          alenaStateMachine.setStatusLabel(lastTool.label);
         }
 
-        setRobotState("RESPONDING");
+        alenaStateMachine.transitionTo("COMPLETED"); // We use COMPLETED instead of RESPONDING
 
-        // Replace the processing placeholder with the actual response
         setConversation((prev) =>
           prev.map((m) =>
             m.id === processingMsgId
@@ -191,7 +221,6 @@ export function useRobot() {
           )
         );
 
-        // Invalidate task queries so the UI stays in sync after Robot actions
         const taskModifyingTools = ["createTask", "updateTask", "completeTask", "deleteTask"];
         const didModifyTasks = response.toolExecutions?.some((te) =>
           taskModifyingTools.includes(te.tool)
@@ -200,24 +229,20 @@ export function useRobot() {
           queryClient.invalidateQueries({ queryKey: ["tasks"] });
         }
 
-        // Speak response if voice is enabled — read via ref to avoid stale closure
         if (voiceEnabledRef.current && response.reply) {
           speakRef.current(response.reply);
         }
 
-        // Briefly show success, then return to idle (or speaking if voice is active)
-        setRobotState("SUCCESS");
-        setStatusLabel("Done!");
+        alenaStateMachine.transitionTo("COMPLETED", "Done!");
         setTimeout(() => {
-          setRobotState((prev) => (prev === "SUCCESS" ? "IDLE" : prev));
-          setStatusLabel("");
+          if (alenaStateMachine.getState() === "COMPLETED") {
+             alenaStateMachine.transitionTo("IDLE", "");
+          }
         }, 1500);
       } catch (err: any) {
-        setRobotState("ERROR");
         const errorMsg = err?.response?.data?.message || "Something went wrong. Please try again.";
-        setStatusLabel(errorMsg);
+        alenaStateMachine.transitionTo("ERROR", errorMsg);
 
-        // Replace processing placeholder with error message
         setConversation((prev) =>
           prev.map((m) =>
             m.id === processingMsgId
@@ -231,30 +256,25 @@ export function useRobot() {
         );
 
         setTimeout(() => {
-          setRobotState("IDLE");
-          setStatusLabel("");
+          alenaStateMachine.transitionTo("IDLE", "");
         }, 3000);
       }
     },
-    [robotState, conversation, queryClient]
+    [alenaState, conversation, queryClient]
   );
 
-  // Keep sendMessageRef in sync with the latest sendMessage
   sendMessageRef.current = sendMessage;
 
   const clearConversation = useCallback(() => {
     setConversation([]);
-    setRobotState("IDLE");
-    setStatusLabel("");
+    alenaStateMachine.transitionTo("IDLE", "");
     stopSpeaking();
   }, [stopSpeaking]);
 
   const setProactiveState = useCallback((message: string) => {
-    setRobotState("PROACTIVE");
-    setStatusLabel(message);
+    alenaStateMachine.transitionTo("PROACTIVE_NOTIFICATION", message);
     setTimeout(() => {
-      setRobotState("IDLE");
-      setStatusLabel("");
+      alenaStateMachine.transitionTo("IDLE", "");
     }, 4000);
   }, []);
 
@@ -262,14 +282,14 @@ export function useRobot() {
     isOpen,
     open,
     close,
-    robotState,
+    alenaState,
+    emotion,
     statusLabel,
     conversation,
     inputValue,
     setInputValue,
     sendMessage,
     clearConversation,
-    // Voice API
     isVoiceInSupported,
     isVoiceOutSupported,
     isListening,
@@ -279,6 +299,7 @@ export function useRobot() {
     startListening,
     stopListening,
     stopSpeaking,
+    speak,
     setProactiveState,
   };
 }

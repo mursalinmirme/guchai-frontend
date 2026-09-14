@@ -50,6 +50,7 @@ export interface UserPreferences {
   dailyReviewTime?: string;
   weeklyReviewReminder?: boolean;
   voiceEnabled?: boolean;
+  wakeWordEnabled?: boolean;
 }
 
 export const robotApi = {

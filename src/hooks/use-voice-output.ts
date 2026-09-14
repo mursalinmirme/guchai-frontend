@@ -53,7 +53,11 @@ export function useVoiceOutput() {
   const pickVoice = useCallback((): SpeechSynthesisVoice | null => {
     const voices = voicesRef.current;
     if (!voices.length) return null;
+
+    // Prioritize high-quality, natural-sounding voices (often available in Edge, Chrome, or macOS)
     return (
+      voices.find((v) => (v.name.includes("Natural") || v.name.includes("Neural") || v.name.includes("Premium")) && v.lang.startsWith("en-US")) ||
+      voices.find((v) => (v.name.includes("Natural") || v.name.includes("Neural") || v.name.includes("Premium")) && v.lang.startsWith("en")) ||
       voices.find((v) => v.name.includes("Google") && v.lang === "en-US") ||
       voices.find((v) => v.name.includes("Google") && v.lang.startsWith("en")) ||
       voices.find((v) => v.lang === "en-US") ||

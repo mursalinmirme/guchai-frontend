@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { format } from "date-fns";
+import { triggerWelcome } from "@/hooks/use-alena-alerts";
 import {
   useTasksByDate,
   useUpdateStatus,
@@ -31,6 +32,30 @@ function Dashboard() {
   const { data, isLoading } = useTasksByDate(date);
   const update = useUpdateStatus();
   const [dragOver, setDragOver] = useState<Status | null>(null);
+
+  useEffect(() => {
+    // Browsers block audio autoplay until a user gesture.
+    // Strategy: try after 2.5s (works if user already interacted),
+    // and also register a one-time click fallback.
+    let fired = false;
+    const fire = () => {
+      if (fired) return;
+      fired = true;
+      triggerWelcome();
+    };
+
+    const t = setTimeout(fire, 2500);
+
+    // Fallback: speak on the first click after mount
+    window.addEventListener("click", fire, { once: true });
+    window.addEventListener("keydown", fire, { once: true });
+
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("click", fire);
+      window.removeEventListener("keydown", fire);
+    };
+  }, []);
 
   const grouped = useMemo(() => {
     const g: Record<Status, Task[]> = { pending: [], in_progress: [], complete: [] };

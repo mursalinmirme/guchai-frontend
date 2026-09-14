@@ -92,6 +92,36 @@ export function RobotPreferences() {
         </div>
       </div>
 
+      {/* ── VOICE & WAKE WORD ── */}
+      <div>
+        <h3 className="text-sm font-semibold text-text-main mb-1">Voice & Wake Word</h3>
+        <p className="text-xs text-text-dim mb-4">
+          Control how Alena listens for your voice. The wake word engine runs entirely in your browser.
+        </p>
+
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-sm text-text-main">Voice Output</span>
+              <p className="text-[10px] text-text-dim mt-0.5">Alena speaks responses aloud</p>
+            </div>
+            <Toggle checked={localPrefs.voiceEnabled ?? false} onChange={(v) => handleChange("voiceEnabled", v)} />
+          </div>
+          <div className="flex justify-between items-center">
+            <div>
+              <span className="text-sm text-text-main">Wake Word Detection</span>
+              <p className="text-[10px] text-text-dim mt-0.5">Say "Hey Alena" to activate (browser-only, no uploads)</p>
+            </div>
+            <Toggle checked={localPrefs.wakeWordEnabled ?? true} onChange={(v) => handleChange("wakeWordEnabled", v)} />
+          </div>
+        </div>
+
+        <div className="mt-3 p-2.5 rounded-lg text-[10px] leading-relaxed"
+          style={{ background: "color-mix(in oklab, var(--brand) 8%, transparent)", color: "var(--text-dim)", border: "1px solid color-mix(in oklab, var(--brand) 15%, transparent)" }}>
+          🔒 <strong className="text-text-main">Privacy:</strong> Alena never secretly records or transmits your microphone audio. Wake word detection processes audio locally in your browser only.
+        </div>
+      </div>
+
       <div className={`space-y-4 transition-opacity ${localPrefs.proactiveEnabled === false ? "opacity-40 pointer-events-none" : ""}`}>
         <h3 className="text-xs font-semibold text-text-dim uppercase tracking-wider border-b border-border pb-2">
           Notifications

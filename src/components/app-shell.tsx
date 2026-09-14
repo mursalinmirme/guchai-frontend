@@ -5,6 +5,8 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { todayStr, useTodayDashboardStats } from "@/hooks/use-tasks";
 import { Logo } from "@/components/ui/logo";
 import { RobotLauncher } from "@/components/robot/robot-launcher";
+import { RobotAlertPopover } from "@/components/robot/robot-alert-popover";
+import { useAlenaAlertPopover } from "@/hooks/use-alena-alerts";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   BarChart3,
@@ -120,10 +122,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const stats = useTodayDashboardStats();
+  
+  // Alert popover state
+  const alertState = useAlenaAlertPopover();
 
   return (
     <div className="min-h-screen bg-bg-primary text-text-main selection:bg-brand/30 pb-16 lg:pb-0">
       <OvertimeMonitor />
+      <RobotAlertPopover 
+        isOpen={alertState.isOpen} 
+        message={alertState.message} 
+        emotion={alertState.emotion} 
+        onClose={alertState.close} 
+      />
 
       {/* ─── DESKTOP SIDEBAR — unchanged at lg+ ─── */}
       <aside className="hidden lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-64 lg:flex lg:flex-col border-r border-border bg-bg-secondary/60 p-6 z-30">
