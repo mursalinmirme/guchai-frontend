@@ -81,9 +81,11 @@ class BrowserWakeWordEngine implements IWakeWordEngine {
 
   public startListening(onWakeWord: WakeWordCallback): void {
     if (!this.isSupported) return;
+    
+    this.onWakeWordCb = onWakeWord;
+    
     if (this.wantListening) return;   // already running, update callback only
 
-    this.onWakeWordCb = onWakeWord;
     this.wantListening = true;
 
     try {
@@ -105,10 +107,10 @@ class BrowserWakeWordEngine implements IWakeWordEngine {
     if (!this.isSupported) return;
     if (!this.wantListening) return;   // already stopped, avoid double-stop
 
-    this.wantListening = false;        // must be set BEFORE calling .stop() so onend doesn't restart
+    this.wantListening = false;        // must be set BEFORE calling .abort() so onend doesn't restart
 
     try {
-      this.recognition.stop();
+      this.recognition.abort();
       console.log("[WakeWordEngine] Stopped listening.");
     } catch {
       // ignore — already stopped

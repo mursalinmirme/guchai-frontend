@@ -101,12 +101,22 @@ export function useAlena() {
   const {
     isSupported: isVoiceInSupported,
     isListening,
-    startListening,
+    startListening: rawStartListening,
     stopListening,
   } = useVoiceInput({
     onTranscript: handleTranscript,
     onError: handleVoiceError,
   });
+
+  const startListening = useCallback(() => {
+    // Force stop the wake word engine immediately so it releases the microphone
+    wakeWordEngine.stopListening();
+    // A tiny timeout ensures the browser's mic stream is fully released
+    // before the command engine requests it, preventing audio-capture errors.
+    setTimeout(() => {
+      rawStartListening();
+    }, 50);
+  }, [rawStartListening]);
 
   // Natural Interruption Support
   const handleWakeWord = useCallback(() => {
