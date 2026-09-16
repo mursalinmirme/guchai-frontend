@@ -111,7 +111,7 @@ export function RobotLauncher() {
       {/* Floating Action Button */}
       <motion.button
         onClick={isOpen ? close : open}
-        className="robot-fab fixed z-50 bottom-[76px] right-4 flex items-center justify-center rounded-2xl shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand lg:bottom-6"
+        className={`robot-fab fixed z-50 bottom-[76px] right-4 items-center justify-center rounded-2xl shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand lg:bottom-6 ${isOpen ? "hidden lg:flex" : "flex"}`}
         style={{
           width: 60,
           height: 60,
