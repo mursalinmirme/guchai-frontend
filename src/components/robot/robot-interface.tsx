@@ -554,7 +554,7 @@ export function RobotInterface({
                     </div>
                   </div>
                   <p className="text-[10px] text-text-dim text-center mt-1.5 opacity-40">
-                    Enter to send · Shift+Enter for new line · Say "Hey Alena" to wake
+                    Enter to send · Shift+Enter for new line · Say "Hey Alena" or "Hey Doc" to wake
                   </p>
                 </div>
               </>

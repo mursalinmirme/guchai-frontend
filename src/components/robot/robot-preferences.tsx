@@ -110,7 +110,7 @@ export function RobotPreferences() {
           <div className="flex justify-between items-center">
             <div>
               <span className="text-sm text-text-main">Wake Word Detection</span>
-              <p className="text-[10px] text-text-dim mt-0.5">Say "Hey Alena" to activate (browser-only, no uploads)</p>
+              <p className="text-[10px] text-text-dim mt-0.5">Say "Hey Alena" or "Hey Doc" to activate (browser-only, no uploads)</p>
             </div>
             <Toggle checked={localPrefs.wakeWordEnabled ?? true} onChange={(v) => handleChange("wakeWordEnabled", v)} />
           </div>

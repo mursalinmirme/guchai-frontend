@@ -22,6 +22,11 @@ export function useAlena() {
   const [isOpen, setIsOpen] = useState(false);
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
+  const isStartingVoiceRef = useRef(false);
+  const isContinuousVoiceModeRef = useRef(false);
+  const setIsContinuousVoiceMode = useCallback((val: boolean) => {
+    isContinuousVoiceModeRef.current = val;
+  }, []);
   const queryClient = useQueryClient();
 
   // Fetch user preferences (stale-while-revalidate, fast)
@@ -102,32 +107,55 @@ export function useAlena() {
     isSupported: isVoiceInSupported,
     isListening,
     startListening: rawStartListening,
-    stopListening,
+    stopListening: rawStopListening,
   } = useVoiceInput({
     onTranscript: handleTranscript,
     onError: handleVoiceError,
   });
 
   const startListening = useCallback(() => {
+    isStartingVoiceRef.current = true;
     // Force stop the wake word engine immediately so it releases the microphone
     wakeWordEngine.stopListening();
     // A tiny timeout ensures the browser's mic stream is fully released
     // before the command engine requests it, preventing audio-capture errors.
     setTimeout(() => {
       rawStartListening();
+      // Allow isListening state to take over, reset the guard after a generous buffer
+      setTimeout(() => {
+        isStartingVoiceRef.current = false;
+      }, 1000);
     }, 50);
   }, [rawStartListening]);
+
+  const stopListening = useCallback(() => {
+    setIsContinuousVoiceMode(false);
+    rawStopListening();
+  }, [rawStopListening, setIsContinuousVoiceMode]);
 
   // Natural Interruption Support
   const handleWakeWord = useCallback(() => {
     if (isSpeaking) {
       stopSpeaking(); // Interrupt Alena's current speech
     }
+    
+    const isFirstWake = !isOpen;
     if (!isOpen) {
       setIsOpen(true);
     }
-    startListening();
-  }, [isSpeaking, stopSpeaking, isOpen, startListening]);
+    
+    setIsContinuousVoiceMode(true);
+    
+    if (isFirstWake || !conversation.length) {
+      speakRef.current("Hi, how can I help you today?", () => {
+        startListening();
+      });
+    } else {
+      speakRef.current("Yes?", () => {
+        startListening();
+      });
+    }
+  }, [isSpeaking, stopSpeaking, isOpen, startListening, conversation.length, setIsContinuousVoiceMode]);
 
   useEffect(() => {
     if (!wakeWordEnabled) {
@@ -135,7 +163,8 @@ export function useAlena() {
       return;
     }
     // Only listen for wake word if we are not actively listening for a command
-    if (!isListening) {
+    // and we are not in the process of starting the command listener.
+    if (!isListening && !isStartingVoiceRef.current) {
       wakeWordEngine.startListening(handleWakeWord);
     } else {
       wakeWordEngine.stopListening();
@@ -172,8 +201,10 @@ export function useAlena() {
 
   const close = useCallback(() => {
     setIsOpen(false);
+    setIsContinuousVoiceMode(false);
+    stopListening();
     alenaStateMachine.transitionTo("IDLE");
-  }, []);
+  }, [stopListening, setIsContinuousVoiceMode]);
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -240,7 +271,11 @@ export function useAlena() {
         }
 
         if (voiceEnabledRef.current && response.reply) {
-          speakRef.current(response.reply);
+          speakRef.current(response.reply, () => {
+            if (isContinuousVoiceModeRef.current) startListening();
+          });
+        } else {
+          if (isContinuousVoiceModeRef.current) startListening();
         }
 
         alenaStateMachine.transitionTo("COMPLETED", "Done!");

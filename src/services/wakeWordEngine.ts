@@ -20,14 +20,22 @@ export interface IWakeWordEngine {
 class BrowserWakeWordEngine implements IWakeWordEngine {
   public isSupported: boolean = false;
   private recognition: any = null;
-  private wantListening: boolean = false;      // desired state (set before calling .start/.stop)
+  private wantListening: boolean = false; // desired state (set before calling .start/.stop)
   private onWakeWordCb: WakeWordCallback | null = null;
-  private readonly WAKE_WORDS = ["hey alena", "hi alena", "okay alena", "ok alena", "alena"];
+  private readonly WAKE_WORDS = [
+    "hey alena",
+    "hi alena",
+    "okay alena",
+    "ok alena",
+    "alena",
+    "hi doc",
+    "hey doc",
+    "doc",
+  ];
 
   constructor() {
     const SpeechRecognition =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) return;
 
@@ -81,10 +89,10 @@ class BrowserWakeWordEngine implements IWakeWordEngine {
 
   public startListening(onWakeWord: WakeWordCallback): void {
     if (!this.isSupported) return;
-    
+
     this.onWakeWordCb = onWakeWord;
-    
-    if (this.wantListening) return;   // already running, update callback only
+
+    if (this.wantListening) return; // already running, update callback only
 
     this.wantListening = true;
 
@@ -105,9 +113,9 @@ class BrowserWakeWordEngine implements IWakeWordEngine {
 
   public stopListening(): void {
     if (!this.isSupported) return;
-    if (!this.wantListening) return;   // already stopped, avoid double-stop
+    if (!this.wantListening) return; // already stopped, avoid double-stop
 
-    this.wantListening = false;        // must be set BEFORE calling .abort() so onend doesn't restart
+    this.wantListening = false; // must be set BEFORE calling .abort() so onend doesn't restart
 
     try {
       this.recognition.abort();
