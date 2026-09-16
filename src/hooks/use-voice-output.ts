@@ -44,7 +44,7 @@ export function useVoiceOutput() {
   // Chrome resume-bug workaround interval
   const resumeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Pending utterance to retry after voices load
-  const pendingSpeakRef = useRef<string | null>(null);
+  const pendingSpeakRef = useRef<{ text: string, onEnd?: () => void } | null>(null);
   // Always-current voiceEnabled value without stale closure
   const voiceEnabledRef = useRef(voiceEnabled);
   voiceEnabledRef.current = voiceEnabled;
@@ -53,7 +53,11 @@ export function useVoiceOutput() {
   const pickVoice = useCallback((): SpeechSynthesisVoice | null => {
     const voices = voicesRef.current;
     if (!voices.length) return null;
+
+    // Prioritize high-quality, natural-sounding voices (often available in Edge, Chrome, or macOS)
     return (
+      voices.find((v) => (v.name.includes("Natural") || v.name.includes("Neural") || v.name.includes("Premium")) && v.lang.startsWith("en-US")) ||
+      voices.find((v) => (v.name.includes("Natural") || v.name.includes("Neural") || v.name.includes("Premium")) && v.lang.startsWith("en")) ||
       voices.find((v) => v.name.includes("Google") && v.lang === "en-US") ||
       voices.find((v) => v.name.includes("Google") && v.lang.startsWith("en")) ||
       voices.find((v) => v.lang === "en-US") ||
@@ -64,9 +68,12 @@ export function useVoiceOutput() {
 
   // ── Core speak routine ────────────────────────────────────
   const speakImmediate = useCallback(
-    (cleanText: string) => {
+    (cleanText: string, onEnd?: () => void) => {
       const synth = synthRef.current;
-      if (!synth) return;
+      if (!synth) {
+        onEnd?.();
+        return;
+      }
 
       synth.cancel();
 
@@ -96,6 +103,7 @@ export function useVoiceOutput() {
           clearInterval(resumeIntervalRef.current);
           resumeIntervalRef.current = null;
         }
+        onEnd?.();
       };
 
       utterance.onerror = (e) => {
@@ -107,6 +115,8 @@ export function useVoiceOutput() {
           clearInterval(resumeIntervalRef.current);
           resumeIntervalRef.current = null;
         }
+        // Even on error, we should probably trigger onEnd so it doesn't hang the flow
+        onEnd?.();
       };
 
       synth.speak(utterance);
@@ -121,28 +131,34 @@ export function useVoiceOutput() {
     if (voices.length > 0) {
       voicesRef.current = voices;
       if (pendingSpeakRef.current && voiceEnabledRef.current) {
-        const text = pendingSpeakRef.current;
+        const { text, onEnd } = pendingSpeakRef.current;
         pendingSpeakRef.current = null;
-        setTimeout(() => speakImmediate(text), 50);
+        setTimeout(() => speakImmediate(text, onEnd), 50);
       }
     }
   }, [speakImmediate]);
 
   // ── Public speak() ────────────────────────────────────────
   const speak = useCallback(
-    (text: string) => {
-      if (!voiceEnabledRef.current || !isSupported || !synthRef.current) return;
+    (text: string, onEnd?: () => void) => {
+      if (!voiceEnabledRef.current || !isSupported || !synthRef.current) {
+        onEnd?.();
+        return;
+      }
       const cleanText = stripMarkdown(text);
-      if (!cleanText) return;
+      if (!cleanText) {
+        onEnd?.();
+        return;
+      }
 
       // Voices not yet loaded — queue and wait for onvoiceschanged
       if (voicesRef.current.length === 0) {
-        pendingSpeakRef.current = cleanText;
+        pendingSpeakRef.current = { text: cleanText, onEnd };
         synthRef.current.getVoices(); // trigger load in Chrome
         return;
       }
 
-      speakImmediate(cleanText);
+      speakImmediate(cleanText, onEnd);
     },
     [isSupported, speakImmediate]
   );

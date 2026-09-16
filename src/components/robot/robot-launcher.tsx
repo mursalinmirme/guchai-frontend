@@ -1,22 +1,25 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
-import { RobotFace } from "./robot-face";
+import { Alena3DAvatar } from "./robot-3d-avatar";
 import { RobotInterface } from "./robot-interface";
-import { useRobot } from "@/hooks/use-robot";
+import { useAlena } from "@/hooks/use-alena";
 import { useQuery } from "@tanstack/react-query";
 import { robotApi } from "@/api/robot.api";
+import { useAlenaProactiveAlerts } from "@/hooks/use-alena-alerts";
 
 // ─────────────────────────────────────────────────────────────
-// Notification badge (unread / active state indicator)
+// Notification badge
 // ─────────────────────────────────────────────────────────────
 
 function ActiveDot({ count }: { count?: number }) {
   if (count && count > 0) {
     return (
       <div className="absolute -top-1.5 -right-1.5 z-10">
-        <span className="relative flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold text-white shadow-sm ring-2 ring-bg-secondary"
-              style={{ background: "var(--brand)" }}>
-          {count > 9 ? '9+' : count}
+        <span
+          className="relative flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold text-white shadow-sm ring-2 ring-bg-secondary"
+          style={{ background: "var(--brand)" }}
+        >
+          {count > 9 ? "9+" : count}
         </span>
       </div>
     );
@@ -39,7 +42,7 @@ function ActiveDot({ count }: { count?: number }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Robot Launcher — the floating action button
+// Alena Launcher — floating action button
 // ─────────────────────────────────────────────────────────────
 
 export function RobotLauncher() {
@@ -47,14 +50,14 @@ export function RobotLauncher() {
     isOpen,
     open,
     close,
-    robotState,
+    alenaState,
+    emotion,
     statusLabel,
     conversation,
     inputValue,
     setInputValue,
     sendMessage,
     clearConversation,
-    // Voice hooks from useRobot
     isVoiceInSupported,
     isVoiceOutSupported,
     isListening,
@@ -64,7 +67,8 @@ export function RobotLauncher() {
     startListening,
     stopListening,
     stopSpeaking,
-  } = useRobot();
+    speak,
+  } = useAlena();
 
   const { data: notifications = [] } = useQuery({
     queryKey: ["robot_notifications"],
@@ -72,22 +76,21 @@ export function RobotLauncher() {
     refetchInterval: 30000,
   });
 
-  const unreadCount = notifications.filter(n => !n.read_at).length;
+  // Mount global proactive alerts watcher
+  useAlenaProactiveAlerts(speak);
 
-  const isBusy =
-    robotState === "THINKING" ||
-    robotState === "PROCESSING" ||
-    robotState === "RESPONDING";
-
+  const unreadCount = notifications.filter((n) => !n.read_at).length;
+  const isBusy = alenaState === "THINKING" || alenaState === "WORKING";
   const hasConversation = conversation.length > 0;
 
   return (
     <>
-      {/* The chat panel */}
+      {/* Chat panel */}
       <RobotInterface
         isOpen={isOpen}
         onClose={close}
-        robotState={robotState}
+        robotState={alenaState}
+        emotion={emotion}
         statusLabel={statusLabel}
         conversation={conversation}
         inputValue={inputValue}
@@ -110,24 +113,21 @@ export function RobotLauncher() {
         onClick={isOpen ? close : open}
         className="robot-fab fixed z-50 bottom-[76px] right-4 flex items-center justify-center rounded-2xl shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-brand lg:bottom-6"
         style={{
-          width: 56,
-          height: 56,
-          background: isOpen
-            ? "var(--surface)"
-            : "var(--bg-secondary)",
-          border: `1.5px solid color-mix(in oklab, var(--brand) ${isOpen ? "40%" : "25%"}, var(--border))`,
+          width: 60,
+          height: 60,
+          background: "linear-gradient(145deg, #12121f, #0a0a14)",
+          border: `1.5px solid rgba(129,140,248,${isOpen ? "0.5" : "0.2"})`,
           boxShadow: isOpen
-            ? "0 4px 20px -4px rgba(0,0,0,0.4)"
-            : "0 8px 32px -8px color-mix(in oklab, var(--brand) 35%, rgba(0,0,0,0.5))",
+            ? "0 4px 20px -4px rgba(0,0,0,0.6)"
+            : "0 8px 32px -8px rgba(129,140,248,0.4), 0 0 0 0 rgba(129,140,248,0)",
         }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.94 }}
         transition={{ type: "spring", stiffness: 500, damping: 30 }}
-        aria-label={isOpen ? "Close Robot" : "Open Guchai Robot"}
+        aria-label={isOpen ? "Close Alena" : "Open Alena"}
         aria-expanded={isOpen}
       >
-        {/* Relative container for badge */}
-        <div className="relative">
+        <div className="relative w-full h-full flex items-center justify-center">
           <AnimatePresence mode="wait">
             {isOpen ? (
               <motion.div
@@ -137,30 +137,29 @@ export function RobotLauncher() {
                 exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
                 transition={{ duration: 0.18 }}
               >
-                <X
-                  className="size-5"
-                  style={{ color: "var(--text-dim)" }}
-                />
+                <X className="size-5" style={{ color: "rgba(255,255,255,0.5)" }} />
               </motion.div>
             ) : (
               <motion.div
                 key="face"
+                className="w-full h-full flex items-center justify-center"
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5 }}
                 transition={{ duration: 0.18 }}
               >
-                <RobotFace state={robotState} size="sm" />
+                <Alena3DAvatar state={alenaState} emotion={emotion} size="sm" />
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Activity indicator / Notification Badge */}
-          {!isOpen && (unreadCount > 0 ? (
-            <ActiveDot count={unreadCount} />
-          ) : (isBusy || hasConversation) ? (
-            <ActiveDot />
-          ) : null)}
+          {/* Badge */}
+          {!isOpen &&
+            (unreadCount > 0 ? (
+              <ActiveDot count={unreadCount} />
+            ) : isBusy || hasConversation ? (
+              <ActiveDot />
+            ) : null)}
         </div>
       </motion.button>
     </>
