@@ -14,7 +14,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { format } from "date-fns";
-import { useUpdateTask, type Priority, type Task } from "@/hooks/use-tasks";
+import { useUpdateTask, elapsedSeconds, type Priority, type Task } from "@/hooks/use-tasks";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import { Pencil, Loader2 } from "lucide-react";
@@ -24,6 +24,12 @@ const PRIORITIES: { id: Priority; label: string }[] = [
   { id: "medium", label: "Medium" },
   { id: "high", label: "High" },
   { id: "urgent", label: "Urgent" },
+];
+
+const STATUSES: { id: import("@/hooks/use-tasks").Status; label: string }[] = [
+  { id: "pending", label: "Pending" },
+  { id: "in_progress", label: "In Progress" },
+  { id: "complete", label: "Complete" },
 ];
 
 export function EditTaskDialog({
@@ -37,20 +43,29 @@ export function EditTaskDialog({
   const [title, setTitle] = useState(task.title);
   const [details, setDetails] = useState(task.details || "");
   const [priority, setPriority] = useState<Priority>(task.priority);
+  const [status, setStatus] = useState<import("@/hooks/use-tasks").Status>(task.status);
   const [date, setDate] = useState(task.task_date);
   const [startTime, setStartTime] = useState(format(new Date(task.planned_start), "HH:mm"));
   const [endTime, setEndTime] = useState(format(new Date(task.planned_end), "HH:mm"));
   const update = useUpdateTask();
   const isMobile = useIsMobile();
 
+  const [loggedHours, setLoggedHours] = useState(0);
+  const [loggedMinutes, setLoggedMinutes] = useState(0);
+
   useEffect(() => {
     if (open) {
       setTitle(task.title);
       setDetails(task.details || "");
       setPriority(task.priority);
+      setStatus(task.status);
       setDate(task.task_date);
       setStartTime(format(new Date(task.planned_start), "HH:mm"));
       setEndTime(format(new Date(task.planned_end), "HH:mm"));
+      
+      const totalSecs = Math.floor(elapsedSeconds(task, Date.now()));
+      setLoggedHours(Math.floor(totalSecs / 3600));
+      setLoggedMinutes(Math.floor((totalSecs % 3600) / 60));
     }
   }, [open, task]);
 
@@ -63,17 +78,33 @@ export function EditTaskDialog({
       toast.error("End time must be after start time");
       return;
     }
+    const newAccumulated = loggedHours * 3600 + loggedMinutes * 60;
+    const patch: Partial<Task> = {
+      title: title.trim(),
+      details: details.trim() || null,
+      priority,
+      status,
+      task_date: date,
+      planned_start,
+      planned_end,
+      accumulated_seconds: newAccumulated,
+    };
+    
+    if (status === "in_progress") {
+      patch.actual_start = new Date().toISOString();
+      if (task.status === "complete") patch.actual_end = null;
+    } else if (status === "pending") {
+      patch.actual_start = null;
+      if (task.status === "complete") patch.actual_end = null;
+    } else if (status === "complete") {
+      patch.actual_start = null;
+      patch.actual_end = new Date().toISOString();
+    }
+
     try {
       await update.mutateAsync({
         id: task.id,
-        patch: {
-          title: title.trim(),
-          details: details.trim() || null,
-          priority,
-          task_date: date,
-          planned_start,
-          planned_end,
-        },
+        patch,
       });
       toast.success("Task updated");
       setOpen(false);
@@ -146,6 +177,33 @@ export function EditTaskDialog({
           />
         </label>
       </div>
+      <div className="grid grid-cols-2 gap-3">
+        <label className="block">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+            Logged Hours
+          </span>
+          <input
+            type="number"
+            min="0"
+            value={loggedHours}
+            onChange={(e) => setLoggedHours(parseInt(e.target.value) || 0)}
+            className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm font-mono outline-none focus:border-brand"
+          />
+        </label>
+        <label className="block">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+            Logged Minutes
+          </span>
+          <input
+            type="number"
+            min="0"
+            max="59"
+            value={loggedMinutes}
+            onChange={(e) => setLoggedMinutes(parseInt(e.target.value) || 0)}
+            className="mt-1 w-full rounded-lg bg-bg-primary/60 border border-border px-3 py-2 text-sm font-mono outline-none focus:border-brand"
+          />
+        </label>
+      </div>
       <div>
         <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
           Priority
@@ -163,6 +221,27 @@ export function EditTaskDialog({
               }`}
             >
               {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-text-dim">
+          Status
+        </span>
+        <div className="mt-1 grid grid-cols-3 gap-1.5">
+          {STATUSES.map((s) => (
+            <button
+              type="button"
+              key={s.id}
+              onClick={() => setStatus(s.id)}
+              className={`py-2 text-xs font-semibold rounded-lg border transition ${
+                status === s.id
+                  ? "bg-brand text-brand-foreground border-brand"
+                  : "bg-bg-primary/60 border-border text-text-dim hover:text-text-main"
+              }`}
+            >
+              {s.label}
             </button>
           ))}
         </div>
