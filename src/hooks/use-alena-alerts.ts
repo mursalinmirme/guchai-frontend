@@ -65,13 +65,17 @@ export const triggerWelcome = () => {
     const synth = window.speechSynthesis;
     synth.cancel();
     const utterance = new SpeechSynthesisUtterance(greeting);
-    utterance.rate = 0.92;
-    utterance.pitch = 1.05;
+    utterance.rate = 0.85; // Slower for more human-like pacing
+    utterance.pitch = 1.0;
     utterance.volume = 1.0;
 
     // Pick best English voice if available
     const voices = synth.getVoices();
     const voice =
+      voices.find((v) => v.name.includes("Microsoft Jenny Online (Natural)")) ||
+      voices.find((v) => v.name.includes("Microsoft Aria Online (Natural)")) ||
+      voices.find((v) => v.name.includes("Siri") && v.lang.startsWith("en")) ||
+      voices.find((v) => v.name.includes("Samantha")) ||
       voices.find((v) => (v.name.includes("Natural") || v.name.includes("Neural")) && v.lang.startsWith("en")) ||
       voices.find((v) => v.name.includes("Google") && v.lang.startsWith("en")) ||
       voices.find((v) => v.lang.startsWith("en-US")) ||

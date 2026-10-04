@@ -56,6 +56,10 @@ export function useVoiceOutput() {
 
     // Prioritize high-quality, natural-sounding voices (often available in Edge, Chrome, or macOS)
     return (
+      voices.find((v) => v.name.includes("Microsoft Jenny Online (Natural)")) ||
+      voices.find((v) => v.name.includes("Microsoft Aria Online (Natural)")) ||
+      voices.find((v) => v.name.includes("Siri") && v.lang.startsWith("en")) ||
+      voices.find((v) => v.name.includes("Samantha")) ||
       voices.find((v) => (v.name.includes("Natural") || v.name.includes("Neural") || v.name.includes("Premium")) && v.lang.startsWith("en-US")) ||
       voices.find((v) => (v.name.includes("Natural") || v.name.includes("Neural") || v.name.includes("Premium")) && v.lang.startsWith("en")) ||
       voices.find((v) => v.name.includes("Google") && v.lang === "en-US") ||
@@ -81,7 +85,7 @@ export function useVoiceOutput() {
       const voice = pickVoice();
       if (voice) utterance.voice = voice;
 
-      utterance.rate = 0.92;
+      utterance.rate = 0.85; // Slower for more human-like pacing
       utterance.pitch = 1.0;
       utterance.volume = 1.0;
 
